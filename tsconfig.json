@@ -1,0 +1,14 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "dist",
+    "removeComments": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "noEmitOnError": true  // -> wont compile if there is an error 
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
