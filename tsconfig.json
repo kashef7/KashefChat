@@ -7,7 +7,10 @@
     "removeComments": true,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
-    "noEmitOnError": true  // -> wont compile if there is an error 
+    "noEmitOnError": true,  // -> wont compile if there is an error 
+    "strict": true,
+    "esModuleInterop": true,
+    "lib": ["ESNext"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

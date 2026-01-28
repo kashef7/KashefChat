@@ -1,19 +1,8 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import { app } from "./app";
-import fs from "fs";
-import path from "path";
 
-const envPath = path.resolve(__dirname, "../config.env");
+const Port = Number(process.env.PORT) || 5000;
 
-if (!fs.existsSync(envPath)) {
-  console.error("config.env not found at:", envPath);
-}
-
-dotenv.config({ path: envPath });
-
-
-const Port = Number(process.env.PORT);
-
-app.listen(Port,()=>{
+app.listen(Port,async ()=>{
   console.log(`listening on port ${Port}`);
 })
