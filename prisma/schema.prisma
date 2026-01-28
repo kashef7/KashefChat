@@ -4,10 +4,69 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id   Int    @id @default(autoincrement())
-  name String
+  id                  String        @id @default(uuid())
+  name                String
+  email               String        @unique
+  password            String
+  sentFriendships     FriendShip[]  @relation("Sender")
+  receivedFriendships FriendShip[]  @relation("Receiver")
+  messages            Message[]
+  chatMemberships     ChatMembers[]
+}
+
+model FriendShip {
+  id         String           @id @default(uuid())
+  sender     User             @relation("Sender", fields: [senderId], references: [id])
+  senderId   String
+  receiver   User             @relation("Receiver", fields: [receiverId], references: [id])
+  receiverId String
+  status     FriendShipStatus @default(Pending)
+
+  @@unique([senderId, receiverId])
+}
+
+enum FriendShipStatus {
+  Pending
+  Accepted
+  Rejected
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  content   String
+  sender    User      @relation(fields: [senderId], references: [id])
+  senderId  String
+  isRead    Boolean   @default(false)
+  sentAt    DateTime  @default(now())
+  deletedAt DateTime?
+  chat      Chat      @relation(fields: [chatId], references: [id])
+  chatId    String
+  @@index([chatId])
+}
+
+model Chat {
+  id        String        @id @default(uuid())
+  type      ChatType      @default(private)
+  createdAt DateTime      @default(now())
+  members   ChatMembers[]
+  messages  Message[]
+}
+
+enum ChatType {
+  private
+  group
+}
+
+model ChatMembers {
+  user     User     @relation(fields: [userId], references: [id])
+  userId   String
+  chat     Chat     @relation(fields: [chatId], references: [id])
+  chatId   String
+  joinedAt DateTime @default(now())
+
+  @@id([userId, chatId])
 }
