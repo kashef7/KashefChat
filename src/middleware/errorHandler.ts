@@ -8,7 +8,6 @@ export function errorHandler(err:Error,req:Request,res:Response,next:NextFunctio
       success: false,
       error: {
         message:err.message,
-        code:err.code
       }
     })
   }
