@@ -13,3 +13,22 @@ export const findByEmail = async(email:string) =>{
     where: {email},
   });
 }
+
+export const findById = async(id:string) =>{
+  return await prisma.user.findUnique({
+    where:{id}
+  })
+}
+
+export const findAll = async() =>{
+  return await prisma.user.findMany();
+}
+
+export const findAllNameEmail = async() =>{
+  return await prisma.user.findMany({
+    select: {
+      name: true,
+      email: true,
+    }
+  });
+}
