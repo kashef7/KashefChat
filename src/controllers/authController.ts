@@ -28,3 +28,14 @@ export const login = async (req:Request,res:Response,next:NextFunction) =>{
     next(err);
   }
 }
+
+export const logOut = async (_req:Request,res:Response,next:NextFunction) =>{
+  try{
+    authServices.logOut(res);
+    res.status(200).json({
+      status: 'success',
+    })
+  } catch(err){
+    next(err);
+  }
+}

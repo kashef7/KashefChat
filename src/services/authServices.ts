@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import AppError from "../utilils/AppError";
+import { Response } from "express";
 import { createUser, findByEmail } from "../repositories/userRepo";
 
 
@@ -47,3 +48,14 @@ export const logIn = async (body:any) =>{
 
   return user;
 }
+
+export const logOut = (res: Response) => {
+
+  const COOKIE_EXPIRES_IN_DAYS = Number(process.env.JWT_EXPIRES_IN) || 30;
+
+  const cookieOptions = {
+    expires: new Date(Date.now() + COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+  };
+  res.clearCookie("jwt", cookieOptions);
+};
