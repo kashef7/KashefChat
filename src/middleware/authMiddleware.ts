@@ -27,7 +27,7 @@ export const protect = async (req:Request,res:Response,next:NextFunction) =>{
       return next(new AppError("User doesn't exist",400));
     }
 
-    (req as any).user = user;
+    req.user = user;
 
     next();
 
