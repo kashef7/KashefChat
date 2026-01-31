@@ -9,3 +9,4 @@ router.get("/PendingRequestsReceived",authMiddleware.protect,friendshipControlle
 
 router.post("/sendFriendRequest",authMiddleware.protect,friendshipController.sendFriendRequest);
 router.post("/respondToRequest",authMiddleware.protect,friendshipController.respondToRequest);
+router.delete("/removeFriend",authMiddleware.protect,friendshipController.removeFriend);

@@ -52,3 +52,13 @@ export const respondToRequest = async (senderId:string,receiverId:string,status:
   return await friendsRepo.updateRequestStatus(senderId,receiverId,status);
 }
 
+export const removeFriend = async (userId:string,friendId:string) =>{
+  const result = await friendsRepo.removeFriend(userId,friendId);
+  
+  if(!result){
+    throw new AppError("Friendship not found or not accepted",400);
+  }
+  
+  return result;
+}
+

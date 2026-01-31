@@ -78,3 +78,27 @@ export const createFriendship = async (data:Prisma.FriendShipCreateInput) =>{
   return await prisma.friendShip.create({data});
 }
 
+export const removeFriend = async (senderId:string,receiverId:string) =>{
+  const friendship = await prisma.friendShip.findFirst({
+    where:{
+      OR:[
+        {senderId:senderId,receiverId:receiverId},
+        {senderId:receiverId,receiverId:senderId}
+      ]
+    }
+  });
+
+  if (!friendship) {
+    return null;
+  }
+
+  if (friendship.status !== "Accepted") {
+    return null;
+  }
+
+  return await prisma.friendShip.delete({
+    where:{
+      id: friendship.id
+    }
+  });
+}

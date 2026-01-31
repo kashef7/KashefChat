@@ -79,3 +79,19 @@ export const respondToRequest = async(req:Request,res:Response,next:NextFunction
     next(err);
   }
 }
+
+export const removeFriend = async(req:Request,res:Response,next:NextFunction) =>{
+  try{
+    const id = req.user.id;
+    const friendId = req.body.friendId;
+    const result = await friendshipServices.removeFriend(id,friendId);
+    res.status(200).json({
+      status: 'success',
+      data:{
+        friendship:result
+      }
+    })
+  }catch(err){
+    next(err);
+  }
+}
