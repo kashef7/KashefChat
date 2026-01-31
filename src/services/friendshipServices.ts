@@ -1,11 +1,7 @@
 import AppError from "../utilils/AppError";
 import * as friendsRepo from "../repositories/friendsRepo";
-/*
-  users can check their friends list -> get all users from friend ship where user == sender  || user == receiver
-  users can check if any pending friend requests -> get all friend requests if user == sender and status = pending
-  users can send friend requests
-  users can accept or reject friend requests
-*/
+import * as userRepo from "../repositories/userRepo";
+import { FriendShipStatus } from "@prisma/client";
 
 export const getFriends = async(id:string)=>{
   return await friendsRepo.getFriends(id);
@@ -14,3 +10,45 @@ export const getFriends = async(id:string)=>{
 export const getPendingRequests = async(id:string)=>{
   return await friendsRepo.getPendingRequests(id);
 }
+
+export const getPendingRequestsReceived = async(id:string)=>{
+  return await friendsRepo.getPendingRequestsReceived(id);
+}
+
+export const sendFriendRequest = async(senderId:string,receiverId:string) =>{
+  if(senderId === receiverId){
+    throw new AppError("Can't Send Friend request to oneself",400);
+  }
+  const receiver = await userRepo.findById(receiverId);
+  if(!receiver){
+    throw new AppError("User does not exist",404);
+  }
+
+  const requestStatus = await friendsRepo.getRequestStatus(senderId,receiverId);
+
+  if(requestStatus){
+    if(requestStatus?.status == "Pending"){
+      throw new AppError("request already sent",400);
+    }
+    if (requestStatus?.status == "Accepted"){
+      throw new AppError("You are already friends with user",400);
+    }
+    const status = await friendsRepo.updateRequestStatus(senderId,receiverId,"Pending");
+    return status;
+  }
+
+  return await friendsRepo.createFriendship({
+    sender: {
+      connect: { id: senderId }
+    },
+    receiver: {
+      connect: { id: receiverId }
+    },
+    status: "Pending"
+  });
+}
+
+export const respondToRequest = async (senderId:string,receiverId:string,status:FriendShipStatus) =>{
+  return await friendsRepo.updateRequestStatus(senderId,receiverId,status);
+}
+

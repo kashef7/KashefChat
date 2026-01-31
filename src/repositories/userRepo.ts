@@ -29,6 +29,7 @@ export const findAllNameEmail = async() =>{
     select: {
       name: true,
       email: true,
+      id: true
     }
   });
 }
