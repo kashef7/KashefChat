@@ -33,3 +33,14 @@ export const findAllNameEmail = async() =>{
     }
   });
 }
+
+export const findNameEmailById = async(id:string) =>{
+  return await prisma.user.findUnique({
+    where:{id},
+    select: {
+      name: true,
+      email: true,
+      id: true
+    }
+  });
+}

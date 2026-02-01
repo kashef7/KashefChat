@@ -4,10 +4,15 @@ import { errorHandler } from "./middleware/errorHandler";
 import * as authRoutes from "./routes/authRoutes";
 import * as userRoutes from "./routes/userRoutes";
 import * as friendshipRoutes from "./routes/friendshipRoutes";
+import cors from "cors";
 export const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+  origin: "http://127.0.0.1:5500",
+  credentials: true
+}));
 
 app.use("/api/v1/auth",authRoutes.router);
 app.use("/api/v1/user",userRoutes.router);

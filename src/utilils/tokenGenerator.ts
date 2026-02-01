@@ -17,12 +17,12 @@ const signIn = (user: User, res: Response) => {
   // cookie lifetime in milliseconds — separate from JWT lifetime
   const COOKIE_EXPIRES_IN_DAYS = Number(process.env.JWT_EXPIRES_IN) || 30;
 
-  const cookieOptions = {
-    expires: new Date(Date.now() + COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000),
+  res.cookie("jwt", token, {
     httpOnly: true,
-  };
-
-  res.cookie("jwt", token, cookieOptions);
+    maxAge: COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000,
+    secure: false,
+    sameSite: "lax"
+  });
   user.password = "";
 };
 

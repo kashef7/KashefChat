@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit && node dist/server.js",
-    "prismaMig": "prisma migrate dev --name Test"
+    "prismaMig": "prisma migrate dev --name Test",
+    "test:client": "tsx testFrontEndForSocket/server.ts"
   },
   "keywords": [],
   "author": "",
@@ -16,14 +17,18 @@
     "@types/cookie-parser": "^1.4.9",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.19.2"
+    "prisma": "^6.19.2",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
     "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",

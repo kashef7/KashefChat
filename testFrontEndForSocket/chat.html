@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KashefChat - Chat Room</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; height: 90vh; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        /* The main chat area displaying messages */
+        #chat-box { 
+            flex-grow: 1; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            padding: 15px; 
+            overflow-y: auto; 
+            background-color: #f9f9f9; 
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Message Styles */
+        .message { padding: 8px 12px; border-radius: 15px; max-width: 70%; word-wrap: break-word; }
+        .message.sent { align-self: flex-end; background-color: #007bff; color: white; }
+        .message.received { align-self: flex-start; background-color: #e9ecef; color: black; }
+        .sender-name { font-size: 0.75em; margin-bottom: 2px; opacity: 0.8; }
+
+        /* Input Area Styles */
+        .input-area { display: flex; gap: 10px; }
+        #message-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        #send-btn { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- ============================== -->
+    <!-- HEADER SECTION                 -->
+    <!-- ============================== -->
+    <header>
+        <!-- Shows who you are chatting with -->
+        <h2 id="chat-header">Chatting with: <span id="friend-name">Friend</span></h2>
+        <button onclick="window.location.href='friends.html'">Back to Friends</button>
+    </header>
+
+    <!-- ============================== -->
+    <!-- CHAT HISTORY SECTION           -->
+    <!-- ============================== -->
+    <!-- This div will contain all the message bubbles -->
+    <div id="chat-box">
+        <!-- Example Request Message (Received) -->
+        <div class="message received">
+            <div class="sender-name">Friend</div>
+            Hello! How represent you?
+        </div>
+
+        <!-- Example Response Message (Sent by logged in user) -->
+        <div class="message sent">
+            <div class="sender-name">You</div>
+            I represent logic!
+        </div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- MESSAGING AREA                 -->
+    <!-- ============================== -->
+    <div class="input-area">
+        <!-- Input field for typing new messages -->
+        <input type="text" id="message-input" placeholder="Type your message here...">
+        <!-- Button to send the message -->
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // SCRIPT SECTION
+        // ==========================================
+        
+        // TODO: Get friend ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const friendName = urlParams.get('friendName');
+        const friendId = urlParams.get('friendId');
+
+        if(friendName) {
+            document.getElementById('friend-name').innerText = friendName;
+        }
+
+        // TODO: Initialize Socket.io connection here (or passed from a global service)
+        // const socket = io('YOUR_BACKEND_URL');
+
+        // TODO: Load previous chat history from backend API
+
+        // Handle sending messages
+        const sendBtn = document.getElementById('send-btn');
+        const messageInput = document.getElementById('message-input');
+        const chatBox = document.getElementById('chat-box');
+
+        function sendMessage() {
+            const text = messageInput.value;
+            if (!text) return;
+
+            // Simple UI update for testing (Simulating "You" sent a message)
+            appendMessage(text, 'sent', 'You');
+
+            // TODO: Emit socket event or call API to send message
+            // socket.emit('sendMessage', { to: friendId, content: text });
+
+            messageInput.value = ''; // Clear input
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Function to add message to UI
+        function appendMessage(text, type, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', type);
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.classList.add('sender-name');
+            nameDiv.innerText = sender;
+
+            msgDiv.appendChild(nameDiv);
+            msgDiv.appendChild(document.createTextNode(text)); // Securely add text
+
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
+        }
+
+        // TODO: Listener for incoming messages
+        // socket.on('receiveMessage', (message) => {
+        //     appendMessage(message.content, 'received', friendName);
+        // })
+
+    </script>
+</body>
+</html>

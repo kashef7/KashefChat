@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KashefChat - Login & Signup</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { display: flex; gap: 50px; justify-content: center; }
+        .form-section { border: 1px solid #ccc; padding: 20px; border-radius: 5px; flex: 1; }
+        input { display: block; margin-bottom: 10px; width: 100%; padding: 5px; }
+        button { cursor: pointer; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to KashefChat</h1>
+    
+    <div class="container">
+        <!-- ============================== -->
+        <!-- LOGIN SECTION                  -->
+        <!-- ============================== -->
+        <!-- Connect this form to your /login authentication endpoint -->
+        <div class="form-section" id="login-section">
+            <h2>Login</h2>
+            <form id="login-form">
+                <!-- Username or Email Input -->
+                <label for="login-email">Email:</label>
+                <input type="email" id="login-email" placeholder="Enter your email" required>
+
+                <!-- Password Input -->
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" placeholder="Enter your password" required>
+
+                <!-- Validates credentials and usually returns a JWT token -->
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- ============================== -->
+        <!-- SIGNUP SECTION                 -->
+        <!-- ============================== -->
+        <!-- Connect this form to your /signup registration endpoint -->
+        <div class="form-section" id="signup-section">
+            <h2>Sign Up</h2>
+            <form id="signup-form">
+                <!-- Username Input -->
+                <label for="signup-username">Username:</label>
+                <input type="text" id="signup-username" placeholder="Choose a username" required>
+
+                <!-- Email Input -->
+                <label for="signup-email">Email:</label>
+                <input type="email" id="signup-email" placeholder="Enter your email" required>
+
+                <!-- Password Input -->
+                <label for="signup-password">Password:</label>
+                <input type="password" id="signup-password" placeholder="Create a password" required>
+
+                <label for="signup-ConfirmPassword">Confirm Password:</label>
+                <input type="password" id="signup-ConfirmPassword" placeholder="Confirm password" required>
+                <!-- Creates a new user in the database -->
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // SCRIPT SECTION
+        // ==========================================
+        // You will implement the fetch calls here to connect to your backend.
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // TODO: Collect data from inputs
+            const email = document.getElementById("login-email").value
+            const password = document.getElementById("login-password").value
+            // TODO: Send POST request to /api/auth/login
+            const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/logIn", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                email: email,
+                password: password
+              })
+            })
+
+            const data = await Response.json();
+
+            if(Response.status === 200){
+              console.log("Login submitted");
+              window.location.href = 'friends.html';
+            }
+            else{
+              alert(data.error.message);
+            }
+            // TODO: Store received token (e.g., localStorage)
+            // TODO: Redirect to friends.html upon success
+            
+        });
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // TODO: Collect data from inputs
+            const username = document.getElementById("signup-username").value
+            const email = document.getElementById("signup-email").value
+            const password = document.getElementById("signup-password").value
+            const confirmPassword = document.getElementById("signup-ConfirmPassword").value
+
+            const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/signUp", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              credentials: "include",
+              body: JSON.stringify({
+                name: username,
+                email: email,
+                password: password,
+                confirmPassword: confirmPassword
+              })
+            })
+
+            const data = await Response.json();
+
+            if(Response.status === 200){
+              console.log("Signup successful");
+              window.location.href = 'friends.html';
+            }
+            else{
+              alert(data.error.message);
+            }
+        });
+    </script>
+</body>
+</html>

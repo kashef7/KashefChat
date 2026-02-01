@@ -10,6 +10,22 @@ export const getFriends = async(id:string) =>{
         {senderId: id,status: "Accepted"},
         {receiverId: id,status: "Accepted"}
       ]
+    },
+    include:{
+      sender:{
+        select:{
+          id: true,
+          name: true,
+          email: true
+        }
+      },
+      receiver:{
+        select:{
+          id: true,
+          name: true,
+          email: true
+        }
+      }
     }
   })
 }
@@ -32,6 +48,14 @@ export const getPendingRequestsReceived = async(id:string) =>{
         {receiverId: id},
         {status: "Pending"}
       ]
+    },
+    include:{
+      sender:{
+        select:{
+          name: true,
+          email: true
+        }
+      }
     }
   })
 }
@@ -68,7 +92,9 @@ export const updateRequestStatus = async(senderId:string,receiverId:string,statu
       id: friendship.id
     },
     data:{
-      status: status
+      status: status,
+      senderId: senderId,
+      receiverId: receiverId
     }
   });
 }

@@ -4,4 +4,5 @@ import * as authMiddleware from "../middleware/authMiddleware";
 
 export const router = Router();
 
-router.get("/allNameEmail",authMiddleware.protect,userController.getAllUsersNameEmail);
+router.get("/me", authMiddleware.protect, userController.getMe);
+router.get("/allNameEmail", authMiddleware.protect, userController.getAllUsersNameEmail);

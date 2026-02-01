@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KashefChat - Friends</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        ul { list-style-type: none; padding: 0; }
+        li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        input { padding: 5px; width: 60%; }
+        button { cursor: pointer; padding: 5px 10px; }
+        .action-btn { margin-left: 5px; }
+    </style>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+
+    <!-- Header with user info -->
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>Friends Dashboard</h1>
+        <div id="user-info">Logged in as: <span id="current-username">User</span></div>
+        <button onclick="handleLogout()">Logout</button>
+    </header>
+
+    <!-- ============================== -->
+    <!-- SEND REQUEST SECTION           -->
+    <!-- ============================== -->
+    <section>
+        <h2>Add a Friend</h2>
+        <!-- Input to search for a user by email or username to send a request -->
+        <div>
+            <input type="text" id="friend-input" placeholder="Enter ID to add friend">
+            <button id="send-request-btn">Send Friend Request</button>
+        </div>
+    </section>
+
+    <!-- ============================== -->
+    <!-- INCOMING REQUESTS SECTION      -->
+    <!-- ============================== -->
+    <section>
+        <h2>Friend Requests</h2>
+        <!-- List of users who sent a friend request to the current user -->
+        <ul id="requests-list">
+            <!-- Example Item -->
+            <li>
+                <span>JohnDoe (johndoe@example.com)</span>
+                <div>
+                    <button class="action-btn">Accept</button>
+                    <button class="action-btn">Reject</button>
+                </div>
+            </li>
+            <!-- You will populate this list dynamically using JavaScript -->
+        </ul>
+    </section>
+
+    <!-- ============================== -->
+    <!-- MY FRIENDS SECTION             -->
+    <!-- ============================== -->
+    <section>
+        <h2>My Friends</h2>
+        <!-- List of current friends -->
+        <ul id="friends-list">
+            <!-- Example Item -->
+            <li>
+                <span>JaneSmith</span>
+                <!-- Clicking this should open the chat page with this specific friend -->
+                <button class="action-btn" onclick="startChat('JaneSmith', '123')">Start Messaging</button>
+            </li>
+            <!-- You will populate this list dynamically using JavaScript -->
+        </ul>
+    </section>
+
+    <script>
+        // ==========================================
+        // SCRIPT SECTION
+        // ==========================================
+        
+        const socket = io('http://localhost:3000',{})
+
+
+        window.addEventListener("load", async (event) => {
+            const userRaw = await fetch("http://127.0.0.1:3000/api/v1/user/me",{
+              method:"GET",
+              credentials:"include"
+            })
+            const pendingFriendRequestsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/PendingRequestsReceived",{
+              method:"GET",
+              credentials:"include"
+            })
+            const friendsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/",{
+              method:"GET",
+              credentials:"include"
+            })
+            
+            const pendingFriendRequests = await pendingFriendRequestsRaw.json();
+            const friends = await friendsRaw.json();
+            const user = await userRaw.json();
+            
+            const currentUserId = user.data.user.id;
+            document.getElementById("current-username").textContent = user.data.user.name;
+            socket.emit('join', currentUserId);
+            // Populate pending requests
+            const requestsList = document.getElementById('requests-list');
+            requestsList.innerHTML = '';
+            
+            pendingFriendRequests.data.requests.forEach(request => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${request.sender.name} (${request.sender.email})</span>
+                    <div>
+                        <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'accept')">Accept</button>
+                        <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'reject')">Reject</button>
+                    </div>
+                `;
+                requestsList.appendChild(li);
+            });
+            
+            if (pendingFriendRequests.data.requests.length === 0) {
+                requestsList.innerHTML = '<li>No pending friend requests</li>';
+            }
+            
+            // Populate friends list
+            const friendsList = document.getElementById('friends-list');
+            friendsList.innerHTML = '';
+            
+            friends.data.friends.forEach(friendship => {
+                const friend = friendship.senderId === currentUserId 
+                    ? friendship.receiver
+                    : friendship.sender;
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${friend.name} (${friend.email})</span>
+                    <button class="action-btn" onclick="startChat('${friend.name}', '${friend.id}')">Start Messaging</button>
+                `;
+                friendsList.appendChild(li);
+            });
+            
+            if (friends.data.friends.length === 0) {
+                friendsList.innerHTML = '<li>No friends yet</li>';
+            }
+        });
+        
+        document.getElementById('send-request-btn').addEventListener('click', async() => {
+            const input = document.getElementById('friend-input').value;
+            const response = await fetch("http://127.0.0.1:3000/api/v1/friendship/sendFriendRequest", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                receiverId: input
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Friend request sent successfully!');
+            const senderName = document.getElementById('current-username').textContent;
+            socket.emit("sendFriendRequest", {
+                receiverId: input,
+                senderName: senderName
+    });
+        } else {
+            alert(data.error?.message || 'Failed to send friend request');
+        }
+        });
+
+        function startChat(friendName, friendId) {
+            // Logic to navigate to chat room
+            // Ideally, pass the friendId in the URL parameters
+            console.log("Starting chat with:", friendName);
+            window.location.href = `chat.html?friendId=${friendId}&friendName=${friendName}`;
+        }
+
+        async function handleLogout() {
+            try {
+                const response = await fetch("http://127.0.0.1:3000/api/v1/auth/logOut", {
+                    method: "POST",
+                    credentials: "include"
+                });
+                
+                if (response.ok) {
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Failed to logout');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Failed to logout');
+            }
+        }
+
+        socket.on("friendRequestReceived",(data)=>{
+          alert(data.message + "\n from:" + data.responderName + "status:" + data.status);
+          location.reload();
+        })
+        socket.on("friendRequestResponded",(data)=>{
+          alert(data.message + "\n from:" + data.senderName)
+          location.reload();
+        })
+        async function handleFriendRequest(requestId, action) {
+            try {
+                const response = await fetch("http://127.0.0.1:3000/api/v1/friendship/respondToRequest", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        senderId: requestId,
+                        respond: action === 'accept' ? 'Accepted' : 'Rejected'
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(`Friend request ${action}ed successfully!`);
+                    const responderName = document.getElementById('current-username').textContent;
+                    socket.emit("friendRequestRespond", {
+                    senderId: requestId,
+                    responderName: responderName,
+                    status: action === 'accept' ? 'Accepted' : 'Rejected'
+                });
+                    location.reload();
+                } else {
+                    alert(data.error?.message || `Failed to ${action} friend request`);
+                }
+            } catch (error) {
+                console.error(`Error ${action}ing friend request:`, error);
+                alert(`Failed to ${action} friend request`);
+            }
+        }
+    </script>
+</body>
+</html>
