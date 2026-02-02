@@ -4,6 +4,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import * as authRoutes from "./routes/authRoutes";
 import * as userRoutes from "./routes/userRoutes";
 import * as friendshipRoutes from "./routes/friendshipRoutes";
+import * as chatRoutes from "./routes/chatRoutes";
 import cors from "cors";
 export const app = express();
 
@@ -17,5 +18,6 @@ app.use(cors({
 app.use("/api/v1/auth",authRoutes.router);
 app.use("/api/v1/user",userRoutes.router);
 app.use("/api/v1/friendship",friendshipRoutes.router);
+app.use("/api/v1/chat",chatRoutes.router);
 
 app.use(errorHandler);

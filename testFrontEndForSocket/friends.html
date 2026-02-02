@@ -133,7 +133,7 @@
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span>${friend.name} (${friend.email})</span>
-                    <button class="action-btn" onclick="startChat('${friend.name}', '${friend.id}')">Start Messaging</button>
+                    <button class="action-btn" onclick="startChat('${friend.id}')">Start Messaging</button>
                 `;
                 friendsList.appendChild(li);
             });
@@ -170,11 +170,31 @@
         }
         });
 
-        function startChat(friendName, friendId) {
-            // Logic to navigate to chat room
-            // Ideally, pass the friendId in the URL parameters
-            console.log("Starting chat with:", friendName);
-            window.location.href = `chat.html?friendId=${friendId}&friendName=${friendName}`;
+        async function startChat(friendId) {
+            try {
+                const response = await fetch("http://127.0.0.1:3000/api/v1/chat/startChat", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        id: friendId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const chatId = data.data.chat.id;
+                    window.location.href = `chat.html?chatId=${chatId}`;
+                } else {
+                    alert(data.error?.message || 'Failed to start chat');
+                }
+            } catch (error) {
+                console.error('Error starting chat:', error);
+                alert('Failed to start chat');
+            }
         }
 
         async function handleLogout() {

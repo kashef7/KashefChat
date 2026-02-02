@@ -33,15 +33,13 @@
         #message-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
         #send-btn { padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
 </head>
 <body>
 
-    <!-- ============================== -->
-    <!-- HEADER SECTION                 -->
-    <!-- ============================== -->
     <header>
         <!-- Shows who you are chatting with -->
-        <h2 id="chat-header">Chatting with: <span id="friend-name">Friend</span></h2>
+        <h2 id="chat-header">Chatting in room: <span id="friend-name">Loading...</span></h2>
         <button onclick="window.location.href='friends.html'">Back to Friends</button>
     </header>
 
@@ -50,17 +48,7 @@
     <!-- ============================== -->
     <!-- This div will contain all the message bubbles -->
     <div id="chat-box">
-        <!-- Example Request Message (Received) -->
-        <div class="message received">
-            <div class="sender-name">Friend</div>
-            Hello! How represent you?
-        </div>
-
-        <!-- Example Response Message (Sent by logged in user) -->
-        <div class="message sent">
-            <div class="sender-name">You</div>
-            I represent logic!
-        </div>
+        <p style="text-align: center; color: #999;">Loading messages...</p>
     </div>
 
     <!-- ============================== -->
@@ -77,35 +65,82 @@
         // ==========================================
         // SCRIPT SECTION
         // ==========================================
-        
-        // TODO: Get friend ID from URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const friendName = urlParams.get('friendName');
-        const friendId = urlParams.get('friendId');
+        const chatId = urlParams.get('chatId');
+        
+        let currentUserId = null;
+        let currentUserName = null;
 
-        if(friendName) {
-            document.getElementById('friend-name').innerText = friendName;
-        }
+        const socket = io('http://localhost:3000', {});
 
-        // TODO: Initialize Socket.io connection here (or passed from a global service)
-        // const socket = io('YOUR_BACKEND_URL');
-
-        // TODO: Load previous chat history from backend API
-
-        // Handle sending messages
         const sendBtn = document.getElementById('send-btn');
         const messageInput = document.getElementById('message-input');
         const chatBox = document.getElementById('chat-box');
 
+        // Load chat data on page load
+        window.addEventListener('load', async () => {
+            try {
+                // Get current user info
+                const userResponse = await fetch("http://127.0.0.1:3000/api/v1/user/me", {
+                    method: "GET",
+                    credentials: "include"
+                });
+                const userData = await userResponse.json();
+                currentUserId = userData.data.user.id;
+                currentUserName = userData.data.user.name;
+                // Get chat details and messages
+                const chatResponse = await fetch(`http://127.0.0.1:3000/api/v1/chat/${chatId}`, {
+                    method: "GET",
+                    credentials: "include"
+                });
+
+                if (!chatResponse.ok) {
+                    throw new Error('Failed to load chat');
+                }
+
+                const chatData = await chatResponse.json();
+                const chat = chatData.data.chat;
+
+                // Find the other user (friend)
+                const friend = chat.members.find(member => member.userId !== currentUserId);
+                if (friend) {
+                    document.getElementById('friend-name').textContent = friend.user.name;
+                }
+
+                // Join the chat room
+                socket.emit('joinChat', { chatId });
+
+                // Load existing messages
+                chatBox.innerHTML = '';
+                if (chat.messages && chat.messages.length > 0) {
+                    // Messages are in descending order, reverse them
+                    chat.messages.reverse().forEach(message => {
+                        const isSent = message.senderId === currentUserId;
+                        const senderName = isSent ? 'You' : friend.user.name;
+                        appendMessage(message.content, isSent ? 'sent' : 'received', senderName);
+                    });
+                } else {
+                    chatBox.innerHTML = '<p style="text-align: center; color: #999;">No messages yet. Start the conversation!</p>';
+                }
+
+            } catch (error) {
+                console.error('Error loading chat:', error);
+                alert('Failed to load chat. Redirecting to friends page.');
+                window.location.href = 'friends.html';
+            }
+        });
+
+        // Send message function
         function sendMessage() {
-            const text = messageInput.value;
+            const text = messageInput.value.trim();
             if (!text) return;
 
-            // Simple UI update for testing (Simulating "You" sent a message)
-            appendMessage(text, 'sent', 'You');
-
-            // TODO: Emit socket event or call API to send message
-            // socket.emit('sendMessage', { to: friendId, content: text });
+            socket.emit('sendMessage', { 
+                chatId: chatId, 
+                content: text,
+                senderId: currentUserId,
+                senderName: currentUserName
+            });
 
             messageInput.value = ''; // Clear input
         }
@@ -125,16 +160,18 @@
             nameDiv.innerText = sender;
 
             msgDiv.appendChild(nameDiv);
-            msgDiv.appendChild(document.createTextNode(text)); // Securely add text
+            msgDiv.appendChild(document.createTextNode(text));
 
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
         }
 
-        // TODO: Listener for incoming messages
-        // socket.on('receiveMessage', (message) => {
-        //     appendMessage(message.content, 'received', friendName);
-        // })
+        // Listener for incoming messages
+        socket.on('receiveMessage', (message) => {
+            const isSent = message.senderId === currentUserId;
+            const senderName = isSent ? 'You' : message.senderName;
+            appendMessage(message.content, isSent ? 'sent' : 'received', senderName);
+        });
 
     </script>
 </body>

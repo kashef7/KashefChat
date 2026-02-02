@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import * as friendSocket from "./friendshipSocket";
+import * as chatSocket from "./chatSocket";
 
 export const onConnect = (io:Server) =>{
   io.on("connection",(socket)=>{
@@ -10,8 +11,10 @@ export const onConnect = (io:Server) =>{
       console.log(`User ${userId} joined room`);
     });
 
-  friendSocket.onFriendRequestSent(io,socket);
-  friendSocket.onFriendRequestRespond(io,socket);
+  friendSocket.onFriendRequestSent(io, socket);
+  friendSocket.onFriendRequestRespond(io, socket);
+  chatSocket.onChatJoin(io, socket);
+  chatSocket.onSendMessage(io, socket);
 })
 }
 
