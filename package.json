@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit && node dist/server.js",
-    "prismaMig": "prisma migrate dev --name Test",
-    "test:client": "tsx testFrontEndForSocket/server.ts"
+    "prismaMig": "prisma migrate dev --name Test"
   },
   "keywords": [],
   "author": "",

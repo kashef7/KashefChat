@@ -20,7 +20,9 @@
     <!-- Header with user info -->
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h1>Friends Dashboard</h1>
-        <div id="user-info">Logged in as: <span id="current-username">User</span></div>
+        <div id="user-info">
+            Logged in as: <span id="current-username">User</span> (<span id="current-email">email</span>)
+        </div>
         <button onclick="handleLogout()">Logout</button>
     </header>
 
@@ -31,7 +33,7 @@
         <h2>Add a Friend</h2>
         <!-- Input to search for a user by email or username to send a request -->
         <div>
-            <input type="text" id="friend-input" placeholder="Enter ID to add friend">
+            <input type="text" id="friend-input" placeholder="Enter Email to add friend">
             <button id="send-request-btn">Send Friend Request</button>
         </div>
     </section>
@@ -81,65 +83,80 @@
 
 
         window.addEventListener("load", async (event) => {
-            const userRaw = await fetch("http://127.0.0.1:3000/api/v1/user/me",{
-              method:"GET",
-              credentials:"include"
-            })
-            const pendingFriendRequestsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/PendingRequestsReceived",{
-              method:"GET",
-              credentials:"include"
-            })
-            const friendsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/",{
-              method:"GET",
-              credentials:"include"
-            })
-            
-            const pendingFriendRequests = await pendingFriendRequestsRaw.json();
-            const friends = await friendsRaw.json();
-            const user = await userRaw.json();
-            
-            const currentUserId = user.data.user.id;
-            document.getElementById("current-username").textContent = user.data.user.name;
-            socket.emit('join', currentUserId);
-            // Populate pending requests
-            const requestsList = document.getElementById('requests-list');
-            requestsList.innerHTML = '';
-            
-            pendingFriendRequests.data.requests.forEach(request => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${request.sender.name} (${request.sender.email})</span>
-                    <div>
-                        <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'accept')">Accept</button>
-                        <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'reject')">Reject</button>
-                    </div>
-                `;
-                requestsList.appendChild(li);
-            });
-            
-            if (pendingFriendRequests.data.requests.length === 0) {
-                requestsList.innerHTML = '<li>No pending friend requests</li>';
-            }
-            
-            // Populate friends list
-            const friendsList = document.getElementById('friends-list');
-            friendsList.innerHTML = '';
-            
-            friends.data.friends.forEach(friendship => {
-                const friend = friendship.senderId === currentUserId 
-                    ? friendship.receiver
-                    : friendship.sender;
+            try {
+                const userRaw = await fetch("http://127.0.0.1:3000/api/v1/user/me",{
+                  method:"GET",
+                  credentials:"include"
+                })
                 
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <span>${friend.name} (${friend.email})</span>
-                    <button class="action-btn" onclick="startChat('${friend.id}')">Start Messaging</button>
-                `;
-                friendsList.appendChild(li);
-            });
-            
-            if (friends.data.friends.length === 0) {
-                friendsList.innerHTML = '<li>No friends yet</li>';
+                // Check if user is authenticated
+                if (!userRaw.ok) {
+                    alert('Please login first');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                const pendingFriendRequestsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/PendingRequestsReceived",{
+                  method:"GET",
+                  credentials:"include"
+                })
+                const friendsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/",{
+                  method:"GET",
+                  credentials:"include"
+                })
+                
+                const pendingFriendRequests = await pendingFriendRequestsRaw.json();
+                const friends = await friendsRaw.json();
+                const user = await userRaw.json();
+                
+                const currentUserId = user.data.user.id;
+                document.getElementById("current-username").textContent = user.data.user.name;
+                document.getElementById("current-email").textContent = user.data.user.email;
+                socket.emit('join', currentUserId);
+                // Populate pending requests
+                const requestsList = document.getElementById('requests-list');
+                requestsList.innerHTML = '';
+                
+                pendingFriendRequests.data.requests.forEach(request => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${request.sender.name} (${request.sender.email})</span>
+                        <div>
+                            <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'accept')">Accept</button>
+                            <button class="action-btn" onclick="handleFriendRequest('${request.senderId}', 'reject')">Reject</button>
+                        </div>
+                    `;
+                    requestsList.appendChild(li);
+                });
+                
+                if (pendingFriendRequests.data.requests.length === 0) {
+                    requestsList.innerHTML = '<li>No pending friend requests</li>';
+                }
+                
+                // Populate friends list
+                const friendsList = document.getElementById('friends-list');
+                friendsList.innerHTML = '';
+                
+                friends.data.friends.forEach(friendship => {
+                    const friend = friendship.senderId === currentUserId 
+                        ? friendship.receiver
+                        : friendship.sender;
+                    
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${friend.name} (${friend.email})</span>
+                        <button class="action-btn" onclick="startChat('${friend.id}')">Start Messaging</button>
+                    `;
+                    friendsList.appendChild(li);
+                });
+                
+                if (friends.data.friends.length === 0) {
+                    friendsList.innerHTML = '<li>No friends yet</li>';
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                alert('Please login first');
+                window.location.href = 'index.html';
             }
         });
         
@@ -152,7 +169,7 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                receiverId: input
+                receiverEmail: input
             })
         });
         

@@ -85,6 +85,14 @@
                     method: "GET",
                     credentials: "include"
                 });
+                
+                // Check if user is authenticated
+                if (!userResponse.ok) {
+                    alert('Please login first');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
                 const userData = await userResponse.json();
                 currentUserId = userData.data.user.id;
                 currentUserName = userData.data.user.name;
@@ -125,8 +133,8 @@
 
             } catch (error) {
                 console.error('Error loading chat:', error);
-                alert('Failed to load chat. Redirecting to friends page.');
-                window.location.href = 'friends.html';
+                alert('Failed to load chat. Please login first.');
+                window.location.href = 'index.html';
             }
         });
 

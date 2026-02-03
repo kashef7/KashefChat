@@ -52,7 +52,7 @@ export const getPendingRequestsReceived = async (req:Request,res:Response,next:N
 export const sendFriendRequest = async(req:Request,res:Response,next:NextFunction) =>{
   try{
     const id = req.user.id;
-    const request = await friendshipServices.sendFriendRequest(id,req.body.receiverId);
+    const request = await friendshipServices.sendFriendRequest(id,req.body.receiverEmail);
     res.status(200).json({
       status: 'success',
       data:{

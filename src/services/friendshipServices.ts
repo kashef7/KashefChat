@@ -15,17 +15,16 @@ export const getPendingRequestsReceived = async(id:string)=>{
   return await friendsRepo.getPendingRequestsReceived(id);
 }
 
-export const sendFriendRequest = async(senderId:string,receiverId:string) =>{
-  if(senderId === receiverId){
-    throw new AppError("Can't Send Friend request to oneself",400);
-  }
-  const receiver = await userRepo.findById(receiverId);
+export const sendFriendRequest = async(senderId:string,receiverEmail:string) =>{
+  const receiver = await userRepo.findByEmail(receiverEmail);
   if(!receiver){
     throw new AppError("User does not exist",404);
   }
-
+  const receiverId = receiver.id;
+  if(senderId === receiverId){
+    throw new AppError("Can't Send Friend request to oneself",400);
+  }
   const requestStatus = await friendsRepo.getRequestStatus(senderId,receiverId);
-
   if(requestStatus){
     if(requestStatus?.status == "Pending"){
       throw new AppError("request already sent",400);
