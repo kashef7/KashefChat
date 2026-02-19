@@ -23,10 +23,55 @@
         }
 
         /* Message Styles */
-        .message { padding: 8px 12px; border-radius: 15px; max-width: 70%; word-wrap: break-word; }
+        .message { 
+            padding: 8px 12px; 
+            border-radius: 15px; 
+            max-width: 70%; 
+            word-wrap: break-word; 
+            position: relative;
+            cursor: pointer;
+        }
         .message.sent { align-self: flex-end; background-color: #007bff; color: white; }
         .message.received { align-self: flex-start; background-color: #e9ecef; color: black; }
-        .sender-name { font-size: 0.75em; margin-bottom: 2px; opacity: 0.8; }
+        .sender-name { font-size: 0.75em; margin-bottom: 2px; opacity: 0.8; font-weight: bold; }
+        .message-time { 
+            font-size: 0.65em; 
+            margin-top: 4px; 
+            opacity: 0.7; 
+            text-align: right; 
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .read-status {
+            font-size: 1em;
+            display: inline-block;
+        }
+        .read-status.read { color: #4CAF50; }
+        .read-status.unread { opacity: 0.5; }
+
+        /* Context Menu Styles */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+            min-width: 120px;
+        }
+        .context-menu.show { display: block; }
+        .context-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .context-menu-item:hover { background-color: #f0f0f0; }
+        .context-menu-item:first-child { border-radius: 5px 5px 0 0; }
+        .context-menu-item:last-child { border-radius: 0 0 5px 5px; }
+        .context-menu-item.disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Input Area Styles */
         .input-area { display: flex; gap: 10px; }
@@ -51,6 +96,12 @@
         <p style="text-align: center; color: #999;">Loading messages...</p>
     </div>
 
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <div class="context-menu-item disabled" data-action="edit">Edit</div>
+        <div class="context-menu-item" data-action="delete">Delete</div>
+    </div>
+
     <!-- ============================== -->
     <!-- MESSAGING AREA                 -->
     <!-- ============================== -->
@@ -70,12 +121,25 @@
         
         let currentUserId = null;
         let currentUserName = null;
+        let selectedMessageId = null;
 
-        const socket = io('http://localhost:3000', {});
+        const socket = io('http://127.0.0.1:3000', { withCredentials: true });
 
         const sendBtn = document.getElementById('send-btn');
         const messageInput = document.getElementById('message-input');
         const chatBox = document.getElementById('chat-box');
+        const contextMenu = document.getElementById('context-menu');
+
+        // Format time to 12-hour format
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            let hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            return `${hours}:${minutes} ${ampm}`;
+        }
 
         // Load chat data on page load
         window.addEventListener('load', async () => {
@@ -88,7 +152,7 @@
                 
                 // Check if user is authenticated
                 if (!userResponse.ok) {
-                    alert('Please login first');
+                    console.error('Please login first');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -125,7 +189,12 @@
                     chat.messages.reverse().forEach(message => {
                         const isSent = message.senderId === currentUserId;
                         const senderName = isSent ? 'You' : friend.user.name;
-                        appendMessage(message.content, isSent ? 'sent' : 'received', senderName);
+                        appendMessage(message.id, message.content, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
+                        
+                        // Mark received messages as read
+                        if (!isSent && !message.isRead) {
+                            socket.emit('markMessageAsRead', { messageId: message.id, chatId: chatId });
+                        }
                     });
                 } else {
                     chatBox.innerHTML = '<p style="text-align: center; color: #999;">No messages yet. Start the conversation!</p>';
@@ -133,7 +202,7 @@
 
             } catch (error) {
                 console.error('Error loading chat:', error);
-                alert('Failed to load chat. Please login first.');
+                console.error('Failed to load chat. Please login first.');
                 window.location.href = 'index.html';
             }
         });
@@ -159,28 +228,105 @@
         });
 
         // Function to add message to UI
-        function appendMessage(text, type, sender) {
+        function appendMessage(messageId, text, type, sender, timestamp, canDelete = false) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', type);
+            msgDiv.dataset.messageId = messageId;
             
             const nameDiv = document.createElement('div');
             nameDiv.classList.add('sender-name');
             nameDiv.innerText = sender;
 
+            const contentDiv = document.createElement('div');
+            contentDiv.innerText = text;
+
+            const timeDiv = document.createElement('div');
+            timeDiv.classList.add('message-time');
+            timeDiv.innerText = formatTime(timestamp);
+
             msgDiv.appendChild(nameDiv);
-            msgDiv.appendChild(document.createTextNode(text));
+            msgDiv.appendChild(contentDiv);
+            msgDiv.appendChild(timeDiv);
+
+            // Add context menu only for sent messages
+            if (canDelete) {
+                msgDiv.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    selectedMessageId = messageId;
+                    showContextMenu(e.pageX, e.pageY);
+                });
+            }
 
             chatBox.appendChild(msgDiv);
             chatBox.scrollTop = chatBox.scrollHeight; // Auto scroll to bottom
+        }
+
+        // Show context menu
+        function showContextMenu(x, y) {
+            contextMenu.style.left = `${x}px`;
+            contextMenu.style.top = `${y}px`;
+            contextMenu.classList.add('show');
+        }
+
+        // Hide context menu
+        function hideContextMenu() {
+            contextMenu.classList.remove('show');
+            selectedMessageId = null;
+        }
+
+        // Hide context menu on click outside
+        document.addEventListener('click', hideContextMenu);
+
+        // Context menu actions
+        contextMenu.addEventListener('click', (e) => {
+            const action = e.target.dataset.action;
+            
+            if (action === 'delete' && selectedMessageId) {
+                deleteMessage(selectedMessageId);
+            } else if (action === 'edit') {
+                // Edit functionality will be implemented later
+                console.log('Edit feature coming soon!');
+            }
+            
+            hideContextMenu();
+        });
+
+        // Delete message function
+        function deleteMessage(messageId) {
+            socket.emit('deleteMessage', { 
+                messageId: messageId,
+                chatId: chatId
+            });
         }
 
         // Listener for incoming messages
         socket.on('receiveMessage', (message) => {
             const isSent = message.senderId === currentUserId;
             const senderName = isSent ? 'You' : message.senderName;
-            appendMessage(message.content, isSent ? 'sent' : 'received', senderName);
+            appendMessage(message.id, message.content, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
+            
+            // If received message, mark as read
+            if (!isSent) {
+                socket.emit('markMessageAsRead', { messageId: message.id, chatId: chatId });
+            }
         });
 
+        // Listener for deleted messages
+        socket.on('messageDeleted', (data) => {
+            const messageElement = document.querySelector(`[data-message-id="${data.id}"]`);
+            if (messageElement) {
+                messageElement.remove();
+            }
+        });
+
+        // Listener for message read status
+        socket.on('messageRead', (data) => {
+            const readIcon = document.querySelector(`.read-status[data-message-id="${data.id}"]`);
+            if (readIcon) {
+                readIcon.classList.remove('unread');
+                readIcon.classList.add('read');
+            }
+        });
     </script>
 </body>
 </html>

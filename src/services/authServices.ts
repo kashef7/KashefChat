@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import AppError from "../utilils/AppError";
+import AppError from "../utils/AppError";
 import { Response } from "express";
 import { createUser, findByEmail } from "../repositories/userRepo";
 

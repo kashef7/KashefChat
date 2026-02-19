@@ -1,4 +1,4 @@
-import AppError from "../utilils/AppError";
+import AppError from "../utils/AppError";
 import * as friendsRepo from "../repositories/friendsRepo";
 import * as userRepo from "../repositories/userRepo";
 import { FriendShipStatus } from "@prisma/client";

@@ -1,6 +1,6 @@
 import { Request,Response,NextFunction } from "express";
 import * as authServices from "../services/authServices";
-import signIn from "../utilils/tokenGenerator";
+import signIn from "../utils/tokenGenerator";
 
 export const signUp = async (req:Request,res:Response,next:NextFunction) =>{
   try{

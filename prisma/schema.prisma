@@ -42,7 +42,6 @@ model Message {
   senderId  String
   isRead    Boolean   @default(false)
   sentAt    DateTime  @default(now())
-  deletedAt DateTime?
   chat      Chat      @relation(fields: [chatId], references: [id])
   chatId    String
   @@index([chatId])

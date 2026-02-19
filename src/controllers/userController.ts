@@ -1,6 +1,6 @@
 import { Request,Response,NextFunction } from "express";
 import * as userServices from "../services/userServices";
-import AppError from "../utilils/AppError";
+import AppError from "../utils/AppError";
 
 
 

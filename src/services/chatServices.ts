@@ -1,4 +1,4 @@
-import AppError from "../utilils/AppError";
+import AppError from "../utils/AppError";
 import * as chatRepo from "../repositories/chatRepo";
 
 export const startChat = async(user1Id: string, user2Id: string) => {

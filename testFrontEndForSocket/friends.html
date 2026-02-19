@@ -79,7 +79,7 @@
         // SCRIPT SECTION
         // ==========================================
         
-        const socket = io('http://localhost:3000',{})
+        const socket = io('http://127.0.0.1:3000',{ withCredentials: true })
 
 
         window.addEventListener("load", async (event) => {
@@ -91,7 +91,7 @@
                 
                 // Check if user is authenticated
                 if (!userRaw.ok) {
-                    alert('Please login first');
+                    console.error('Please login first');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -155,7 +155,7 @@
                 }
             } catch (error) {
                 console.error('Authentication error:', error);
-                alert('Please login first');
+                console.error('Please login first');
                 window.location.href = 'index.html';
             }
         });
@@ -176,14 +176,14 @@
         const data = await response.json();
         
         if (response.ok) {
-            alert('Friend request sent successfully!');
+            console.log('Friend request sent successfully!');
             const senderName = document.getElementById('current-username').textContent;
             socket.emit("sendFriendRequest", {
                 receiverId: input,
                 senderName: senderName
     });
         } else {
-            alert(data.error?.message || 'Failed to send friend request');
+            console.error(data.error?.message || 'Failed to send friend request');
         }
         });
 
@@ -206,11 +206,11 @@
                     const chatId = data.data.chat.id;
                     window.location.href = `chat.html?chatId=${chatId}`;
                 } else {
-                    alert(data.error?.message || 'Failed to start chat');
+                    console.error(data.error?.message || 'Failed to start chat');
                 }
             } catch (error) {
                 console.error('Error starting chat:', error);
-                alert('Failed to start chat');
+                console.error('Failed to start chat');
             }
         }
 
@@ -224,20 +224,20 @@
                 if (response.ok) {
                     window.location.href = 'index.html';
                 } else {
-                    alert('Failed to logout');
+                    console.error('Failed to logout');
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                alert('Failed to logout');
+                console.error('Failed to logout');
             }
         }
 
         socket.on("friendRequestReceived",(data)=>{
-          alert(data.message + "\n from:" + data.responderName + "status:" + data.status);
+          console.log(data.message + "\n from:" + data.responderName + "status:" + data.status);
           location.reload();
         })
         socket.on("friendRequestResponded",(data)=>{
-          alert(data.message + "\n from:" + data.senderName)
+          console.log(data.message + "\n from:" + data.senderName)
           location.reload();
         })
         async function handleFriendRequest(requestId, action) {
@@ -256,7 +256,7 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert(`Friend request ${action}ed successfully!`);
+                    console.log(`Friend request ${action}ed successfully!`);
                     const responderName = document.getElementById('current-username').textContent;
                     socket.emit("friendRequestRespond", {
                     senderId: requestId,
@@ -265,11 +265,11 @@
                 });
                     location.reload();
                 } else {
-                    alert(data.error?.message || `Failed to ${action} friend request`);
+                    console.error(data.error?.message || `Failed to ${action} friend request`);
                 }
             } catch (error) {
                 console.error(`Error ${action}ing friend request:`, error);
-                alert(`Failed to ${action} friend request`);
+                console.error(`Failed to ${action} friend request`);
             }
         }
     </script>

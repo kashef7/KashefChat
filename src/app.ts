@@ -5,9 +5,23 @@ import * as authRoutes from "./routes/authRoutes";
 import * as userRoutes from "./routes/userRoutes";
 import * as friendshipRoutes from "./routes/friendshipRoutes";
 import * as chatRoutes from "./routes/chatRoutes";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
 import cors from "cors";
 export const app = express();
 
+
+const limiter = rateLimit({
+   windowMs: 15 * 60 * 1000,
+  max: 100, 
+  message: "Too many requests, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+
+app.use(limiter);
+app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({

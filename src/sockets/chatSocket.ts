@@ -35,3 +35,41 @@ export const onSendMessage = (io: Server, socket: Socket) => {
   });
 };
 
+export const onDeleteMessage = (io: Server, socket: Socket) => {
+  socket.on("deleteMessage", async (data: { messageId: string,chatId: string}) => {
+    try {
+      await prisma.message.delete({
+        where:{
+          id:data.messageId
+        }});
+
+      io.to(data.chatId).emit("messageDeleted",{
+        id: data.messageId,
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      socket.emit("messageError", { error: "Failed to delete message" });
+    }
+  });
+};
+
+export const onMarkMessageAsRead = (io: Server, socket: Socket) => {
+  socket.on("markMessageAsRead", async (data: { messageId: string, chatId: string }) => {
+    try {
+      await prisma.message.update({
+        where: {
+          id: data.messageId
+        },
+        data: {
+          isRead: true
+        }
+      });
+
+      io.to(data.chatId).emit("messageRead", {
+        id: data.messageId
+      });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  });
+};

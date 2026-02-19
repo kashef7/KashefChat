@@ -15,6 +15,8 @@ export const onConnect = (io:Server) =>{
   friendSocket.onFriendRequestRespond(io, socket);
   chatSocket.onChatJoin(io, socket);
   chatSocket.onSendMessage(io, socket);
+  chatSocket.onDeleteMessage(io,socket);
+  chatSocket.onMarkMessageAsRead(io,socket);
 })
 }
 
