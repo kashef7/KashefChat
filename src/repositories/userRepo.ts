@@ -1,10 +1,11 @@
 import {Prisma} from "@prisma/client";
 import prisma from "../prismaClient";
-
+import * as userValidation from "../validators/userValidators"
 
 export const createUser = async(data:Prisma.UserCreateInput) =>{
+  const userData = userValidation.createUserSchema.parse(data);
   return await prisma.user.create({
-    data,
+    data:userData,
   });
 }
 
@@ -21,10 +22,12 @@ export const findById = async(id:string) =>{
 }
 
 export const findAll = async() =>{
+  
   return await prisma.user.findMany();
 }
 
 export const findAllNameEmail = async() =>{
+
   return await prisma.user.findMany({
     select: {
       name: true,
@@ -35,6 +38,7 @@ export const findAllNameEmail = async() =>{
 }
 
 export const findNameEmailById = async(id:string) =>{
+
   return await prisma.user.findUnique({
     where:{id},
     select: {

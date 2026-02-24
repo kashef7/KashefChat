@@ -295,7 +295,8 @@
         function deleteMessage(messageId) {
             socket.emit('deleteMessage', { 
                 messageId: messageId,
-                chatId: chatId
+                chatId: chatId,
+                senderId: currentUserId
             });
         }
 

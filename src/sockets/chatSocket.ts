@@ -1,7 +1,8 @@
 import { Server, Socket } from "socket.io";
 import prisma from "../prismaClient";
+import * as messageServices from "../services/messageServices"
 
-export const onChatJoin = (io: Server, socket: Socket) => {
+export const onChatJoin = (_io: Server, socket: Socket) => {
   socket.on("joinChat", (data: { chatId: string }) => {
     socket.join(data.chatId);
     console.log(`Joined Room: ${data.chatId}`);
@@ -11,16 +12,7 @@ export const onChatJoin = (io: Server, socket: Socket) => {
 export const onSendMessage = (io: Server, socket: Socket) => {
   socket.on("sendMessage", async (data: { chatId: string; content: string; senderId: string; senderName: string }) => {
     try {
-      // Save message to database
-      const message = await prisma.message.create({
-        data: {
-          content: data.content,
-          senderId: data.senderId,
-          chatId: data.chatId
-        }
-      });
-
-      // Broadcast to all users in the chat room
+      const message = await messageServices.createMessage(data.chatId,data.content,data.senderId);
       io.to(data.chatId).emit("receiveMessage", {
         id: message.id,
         content: message.content,
@@ -36,12 +28,9 @@ export const onSendMessage = (io: Server, socket: Socket) => {
 };
 
 export const onDeleteMessage = (io: Server, socket: Socket) => {
-  socket.on("deleteMessage", async (data: { messageId: string,chatId: string}) => {
+  socket.on("deleteMessage", async (data: { messageId: string,chatId: string,senderId: string}) => {
     try {
-      await prisma.message.delete({
-        where:{
-          id:data.messageId
-        }});
+      await messageServices.deleteMessage(data.messageId,data.senderId)
 
       io.to(data.chatId).emit("messageDeleted",{
         id: data.messageId,
