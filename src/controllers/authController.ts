@@ -1,10 +1,11 @@
 import { Request,Response,NextFunction } from "express";
 import * as authServices from "../services/authServices";
 import signIn from "../utils/tokenGenerator";
-
+import * as userValidation from "../validators/userValidators";
 export const signUp = async (req:Request,res:Response,next:NextFunction) =>{
   try{
-    const user = await authServices.signUp(req.body);
+    const validSignUpBody = userValidation.createUserSchema.parse(req.body);
+    const user = await authServices.signUp(validSignUpBody);
     signIn(user,res);
     res.status(200).json({
       status: 'success',
@@ -19,7 +20,8 @@ export const signUp = async (req:Request,res:Response,next:NextFunction) =>{
 
 export const login = async (req:Request,res:Response,next:NextFunction) =>{
   try{
-    const user = await authServices.logIn(req.body);
+    const validLoginBody = userValidation.loginSchema.parse(req.body);
+    const user = await authServices.logIn(validLoginBody);
     signIn(user,res);
     res.status(200).json({
       status: 'success',

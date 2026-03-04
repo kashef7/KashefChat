@@ -1,28 +1,33 @@
 import {Prisma} from "@prisma/client";
 import prisma from "../prismaClient";
-import * as userValidation from "../validators/userValidators"
 
 export const createUser = async(data:Prisma.UserCreateInput) =>{
-  const userData = userValidation.createUserSchema.parse(data);
   return await prisma.user.create({
-    data:userData,
+    data,
   });
 }
 
 export const findByEmail = async(email:string) =>{
   return await prisma.user.findUnique({
-    where: {email},
+    where: {email:email},
   });
 }
 
+export const getIdByEmail = async(email:string) =>{
+  return await prisma.user.findUnique({
+    where: {email:email},
+    select:{
+      id:true
+    }
+  });
+}
 export const findById = async(id:string) =>{
   return await prisma.user.findUnique({
-    where:{id}
+    where:{id:id}
   })
 }
 
 export const findAll = async() =>{
-  
   return await prisma.user.findMany();
 }
 
@@ -38,9 +43,8 @@ export const findAllNameEmail = async() =>{
 }
 
 export const findNameEmailById = async(id:string) =>{
-
   return await prisma.user.findUnique({
-    where:{id},
+    where:{id:id},
     select: {
       name: true,
       email: true,

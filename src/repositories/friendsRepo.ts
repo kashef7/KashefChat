@@ -2,7 +2,6 @@ import { FriendShipStatus } from "@prisma/client";
 import prisma from "../prismaClient";
 import {Prisma} from "@prisma/client";
 
-
 export const getFriends = async(id:string) =>{
   return await prisma.friendShip.findMany({
     where:{
@@ -100,9 +99,12 @@ export const updateRequestStatus = async(senderId:string,receiverId:string,statu
 }
 
 
-export const createFriendship = async (data:Prisma.FriendShipCreateInput) =>{
-  return await prisma.friendShip.create({data});
-}
+export const createFriendship = async (data: Prisma.FriendShipCreateInput) => {
+
+  return await prisma.friendShip.create({
+    data
+  });
+};
 
 export const removeFriend = async (senderId:string,receiverId:string) =>{
   const friendship = await prisma.friendShip.findFirst({

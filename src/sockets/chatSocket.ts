@@ -1,64 +1,83 @@
 import { Server, Socket } from "socket.io";
 import prisma from "../prismaClient";
-import * as messageServices from "../services/messageServices"
+import * as messageServices from "../services/messageServices";
+import {
+  joinChatSchema,
+  sendMessageSchema,
+  deleteMessageSchema,
+  markReadSchema
+} from "../validators/socketValidators";
 
 export const onChatJoin = (_io: Server, socket: Socket) => {
-  socket.on("joinChat", (data: { chatId: string }) => {
-    socket.join(data.chatId);
-    console.log(`Joined Room: ${data.chatId}`);
+  socket.on("joinChat", (data) => {
+    try {
+      const parsed = joinChatSchema.parse(data);
+      socket.join(parsed.chatId);
+      console.log(`Joined Room: ${parsed.chatId}`);
+    } catch {
+      socket.emit("messageError", { error: "Invalid chatId" });
+    }
   });
 };
 
 export const onSendMessage = (io: Server, socket: Socket) => {
-  socket.on("sendMessage", async (data: { chatId: string; content: string; senderId: string; senderName: string }) => {
+  socket.on("sendMessage", async (data) => {
     try {
-      const message = await messageServices.createMessage(data.chatId,data.content,data.senderId);
-      io.to(data.chatId).emit("receiveMessage", {
+      const parsed = sendMessageSchema.parse(data);
+
+      const message = await messageServices.createMessage(
+        parsed.chatId,
+        parsed.content,
+        parsed.senderId
+      );
+
+      io.to(parsed.chatId).emit("receiveMessage", {
         id: message.id,
         content: message.content,
         senderId: message.senderId,
-        senderName: data.senderName,
+        senderName: parsed.senderName,
         sentAt: message.sentAt
       });
+
     } catch (error) {
-      console.error("Error sending message:", error);
-      socket.emit("messageError", { error: "Failed to send message" });
+      socket.emit("messageError", { error: "Invalid message data" });
     }
   });
 };
 
 export const onDeleteMessage = (io: Server, socket: Socket) => {
-  socket.on("deleteMessage", async (data: { messageId: string,chatId: string,senderId: string}) => {
+  socket.on("deleteMessage", async (data) => {
     try {
-      await messageServices.deleteMessage(data.messageId,data.senderId)
+      const parsed = deleteMessageSchema.parse(data);
 
-      io.to(data.chatId).emit("messageDeleted",{
-        id: data.messageId,
+      await messageServices.deleteMessage(parsed.messageId, parsed.senderId);
+
+      io.to(parsed.chatId).emit("messageDeleted", {
+        id: parsed.messageId
       });
+
     } catch (error) {
-      console.error("Error deleting message:", error);
-      socket.emit("messageError", { error: "Failed to delete message" });
+      socket.emit("messageError", { error: "Invalid delete request" });
     }
   });
 };
 
 export const onMarkMessageAsRead = (io: Server, socket: Socket) => {
-  socket.on("markMessageAsRead", async (data: { messageId: string, chatId: string }) => {
+  socket.on("markMessageAsRead", async (data) => {
     try {
+      const parsed = markReadSchema.parse(data);
+
       await prisma.message.update({
-        where: {
-          id: data.messageId
-        },
-        data: {
-          isRead: true
-        }
+        where: { id: parsed.messageId },
+        data: { isRead: true }
       });
 
-      io.to(data.chatId).emit("messageRead", {
-        id: data.messageId
+      io.to(parsed.chatId).emit("messageRead", {
+        id: parsed.messageId
       });
+
     } catch (error) {
-      console.error("Error marking message as read:", error);
+      socket.emit("messageError", { error: "Invalid read request" });
     }
   });
 };

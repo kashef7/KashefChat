@@ -179,7 +179,7 @@
             console.log('Friend request sent successfully!');
             const senderName = document.getElementById('current-username').textContent;
             socket.emit("sendFriendRequest", {
-                receiverId: input,
+                receiverEmail: input,
                 senderName: senderName
     });
         } else {
