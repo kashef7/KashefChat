@@ -1,4 +1,5 @@
 import { Request,Response,NextFunction } from "express";
+import { User } from "@prisma/client";
 import * as authServices from "../services/authServices";
 import signIn from "../utils/tokenGenerator";
 import * as userValidation from "../validators/userValidators";
@@ -41,3 +42,30 @@ export const logOut = async (_req:Request,res:Response,next:NextFunction) =>{
     next(err);
   }
 }
+
+export const googleCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as User;
+    signIn(user, res);
+
+    if (req.accepts("html")) {
+      return res.redirect(process.env.GOOGLE_REDIRECT_URL || "http://127.0.0.1:5500/testFrontEndForSocket/friends.html");
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        user,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const googleFailure = (_req: Request, res: Response) => {
+  res.status(401).json({
+    status: "fail",
+    message: "Google authentication failed",
+  });
+};

@@ -10,6 +10,7 @@
         .form-section { border: 1px solid #ccc; padding: 20px; border-radius: 5px; flex: 1; }
         input { display: block; margin-bottom: 10px; width: 100%; padding: 5px; }
         button { cursor: pointer; padding: 5px 10px; }
+        .google-section { margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -35,6 +36,11 @@
                 <!-- Validates credentials and usually returns a JWT token -->
                 <button type="submit">Login</button>
             </form>
+
+              <div class="google-section">
+                <p>Or</p>
+                <button type="button" id="google-login-btn">Continue with Google</button>
+              </div>
         </div>
 
         <!-- ============================== -->
@@ -132,6 +138,10 @@
               console.error(data.error.message);
             }
         });
+
+          document.getElementById('google-login-btn').addEventListener('click', () => {
+            window.location.href = "http://localhost:3000/api/v1/auth/google";
+          });
     </script>
 </body>
 </html>

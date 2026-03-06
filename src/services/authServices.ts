@@ -36,9 +36,14 @@ export const logIn = async (body:any) =>{
     if(!user){
       throw new AppError("No account found with that email.", 404);
     }
+
+    if (!user.password) {
+      throw new AppError("This account uses Google sign-in. Please continue with Google.", 401);
+    }
+
     const loggedPassword = password;
 
-    const userPassword = user.password || "";
+    const userPassword = user.password;
 
     const isCorrectPassword = await bcrypt.compare(loggedPassword,userPassword);
 

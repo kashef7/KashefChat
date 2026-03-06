@@ -21,7 +21,7 @@ export const getAllUsersNameEmail = async (_req:Request,res:Response,next:NextFu
 export const getMe = async (req:Request,res:Response,next:NextFunction) =>{
   try{
     // req.user is guaranteed to exist due to protect middleware
-    const validUserId = userValidation.idSchema.parse(req.user.id);
+    const validUserId = userValidation.idSchema.parse(req.user!.id);
     const user = await userServices.getUserProfile(validUserId);
     
     if(!user) {

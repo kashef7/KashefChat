@@ -10,7 +10,7 @@ const httpServer = createServer(app)
 
 const io = new Server(httpServer, {
   cors:{
-    origin: "http://127.0.0.1:5500",
+    origin: process.env.IO_CORS_ORIGIN,
     credentials: true
   }
 })

@@ -8,6 +8,9 @@ import * as chatRoutes from "./routes/chatRoutes";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
+import passport from "passport";
+import path from "path";
+import "./utils/passportSetup";
 export const app = express();
 
 
@@ -25,9 +28,13 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: "http://127.0.0.1:5500",
+  origin: process.env.MAIN_CORS_ORIGIN,
   credentials: true
 }));
+
+
+app.use(passport.initialize());
+app.use(express.static(path.join(process.cwd(), "testFrontEndForSocket")));
 
 app.use("/api/v1/auth",authRoutes.router);
 app.use("/api/v1/user",userRoutes.router);

@@ -25,3 +25,8 @@ export const loginSchema = createUserSchema.pick({
   email: true,
   password: true,
 });
+
+export const googleLoginSchema = createUserSchema.pick({
+  email: true,
+  name: true,
+});
