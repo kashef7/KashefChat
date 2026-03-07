@@ -30,3 +30,7 @@ export const googleLoginSchema = createUserSchema.pick({
   email: true,
   name: true,
 });
+
+
+export type SignUpDTO = z.infer<typeof createUserSchema>;
+export type LoginDTO = z.infer<typeof loginSchema>;

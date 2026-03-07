@@ -2,9 +2,9 @@ import bcrypt from "bcrypt";
 import AppError from "../utils/AppError";
 import { Response } from "express";
 import { createUser, findByEmail } from "../repositories/userRepo";
+import type { SignUpDTO, LoginDTO } from "../validators/userValidators";
 
-
-export const signUp = async (body:any) =>{
+export const signUp = async (body:SignUpDTO) =>{
 
   if (body.password != body.confirmPassword) {
     throw new AppError('Password and confirmPassword do not match', 400);
@@ -24,7 +24,7 @@ export const signUp = async (body:any) =>{
   })
 }
 
-export const logIn = async (body:any) =>{
+export const logIn = async (body:LoginDTO) =>{
   const {email,password} = body;
 
     if(!email || !password){
