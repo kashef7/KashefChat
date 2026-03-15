@@ -12,7 +12,13 @@ export const createUserSchema = z.object({
     .max(100, { message: "Password must be at most 100 characters" }),
   confirmPassword: z.string()
     .min(6, { message: "Password must be at least 6 characters" })
-    .max(100, { message: "Password must be at most 100 characters" })
+    .max(100, { message: "Password must be at most 100 characters" }),
+  publicKey: z.string(),
+  encryptedPrivateKey: z.object({
+    ciphertext: z.string(),
+    salt: z.string(),
+    iv: z.string(),
+  }),
 });
 
 export const emailSchema = z.string().email({ message: "Invalid email address" });

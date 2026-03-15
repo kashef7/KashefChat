@@ -70,16 +70,19 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
         // ==========================================
         // SCRIPT SECTION
         // ==========================================
         // You will implement the fetch calls here to connect to your backend.
+        import { KeyGenerationService } from "./Services/keyGenerationService.js";
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             // TODO: Collect data from inputs
             const email = document.getElementById("login-email").value
             const password = document.getElementById("login-password").value
+            
             // TODO: Send POST request to /api/auth/login
             const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/logIn", {
               method: "POST",
@@ -92,7 +95,7 @@
                 password: password
               })
             })
-
+            
             const data = await Response.json();
 
             if(Response.status === 200){
@@ -113,7 +116,7 @@
             const email = document.getElementById("signup-email").value
             const password = document.getElementById("signup-password").value
             const confirmPassword = document.getElementById("signup-ConfirmPassword").value
-
+            const keyGenerationResult = await KeyGenerationService(password);
             const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/signUp", {
               method: "POST",
               headers: {
@@ -124,13 +127,14 @@
                 name: username,
                 email: email,
                 password: password,
-                confirmPassword: confirmPassword
+                confirmPassword: confirmPassword,
+                publicKey: keyGenerationResult.publicKey,
+                encryptedPrivateKey: keyGenerationResult.encryptedPrivateKey
               })
             })
-
             const data = await Response.json();
-
             if(Response.status === 200){
+              localStorage.setItem("privateKey", keyGenerationResult.privateKey);
               console.log("Signup successful");
               window.location.href = 'friends.html';
             }

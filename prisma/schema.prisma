@@ -12,11 +12,26 @@ model User {
   name                String
   email               String        @unique
   password            String?
+  publicKey           String
+  KeyBackup           KeyBackup?     @relation("KeyBackup")
   sentFriendships     FriendShip[]  @relation("Sender")
   receivedFriendships FriendShip[]  @relation("Receiver")
   messages            Message[]
   chatMemberships     ChatMembers[]
 }
+
+model KeyBackup {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  ciphertext  String   
+  salt        String  
+  iv          String   
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation("KeyBackup",fields: [userId], references: [id], onDelete: Cascade)
+}
+
 
 model FriendShip {
   id         String           @id @default(uuid())
