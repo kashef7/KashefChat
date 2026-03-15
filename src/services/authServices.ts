@@ -18,11 +18,19 @@ export const signUp = async (body:SignUpDTO) =>{
   const hashedPassword = await bcrypt.hash(body.password, 12);
 
   return await createUser({
-    name: body.name,
-    email: body.email,
-    password: hashedPassword,
-  })
-}
+      name:      body.name,
+      email:     body.email,
+      password:  hashedPassword,
+      publicKey: body.publicKey,
+      KeyBackup: {
+        create: {
+          ciphertext: body.encryptedPrivateKey.ciphertext,
+          salt:       body.encryptedPrivateKey.salt,
+          iv:         body.encryptedPrivateKey.iv,
+        },
+      },
+    })
+};
 
 export const logIn = async (body:LoginDTO) =>{
   const {email,password} = body;
