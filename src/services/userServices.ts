@@ -8,3 +8,7 @@ export const getAllUsers = async () =>{
 export const getUserProfile = async (id: string) =>{
   return await userRepo.findNameEmailById(id);
 }
+
+export const updateGoogleUser = async (id: string, data: { publicKey?: string; KeyBackup?: string }) =>{
+  return await userRepo.updateUserbyId(id, data);
+}

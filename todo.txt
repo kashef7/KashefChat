@@ -1,0 +1,61 @@
+====================================
+  KashefChat — TODO & Improvements
+====================================
+
+─── CRITICAL FIXES ─────────────────
+
+[✅] Fix build script: "tsc --noEmit" prevents JS output → change to "tsc"
+[❔] Fix logout: clearCookie uses a future expires date, contradicts clearing
+[✅] Rename "utilils" folder → "utils"
+[❔] Stop returning password hash in signup response (exclude at DB level)
+
+─── SECURITY ───────────────────────
+
+[✅] Add input validation library (Zod or Joi) — all endpoints accept raw body with no checks
+[✅] Authenticate socket connections — verify JWT in io.use() middleware
+[❔] Remove client-trusted senderId from socket events — derive from authenticated socket
+[ ] Authorize deleteMessage — verify the user owns the message server-side
+[✅] Add rate limiting (express-rate-limit) on auth routes to prevent brute-force
+[✅] Move CORS origin to env variable (hardcoded in app.ts and server.ts)
+[] Add message encryption (end-to-end)
+
+─── ARCHITECTURE IMPROVEMENTS ──────
+
+[✅] Define TypeScript DTOs/interfaces for all request bodies (replace "any" types)
+[ ] Route socket handlers through services/repos instead of calling Prisma directly
+[ ] Deduplicate friend request logic between HTTP and socket paths
+[ ] Add graceful shutdown (SIGTERM/SIGINT → close server, disconnect Prisma, close sockets)
+[ ] Configure Prisma client with logging and error hooks
+[ ] Add structured logging (Pino or Winston) — replace console.log/console.error
+
+─── MISSING FEATURES ───────────────
+
+[ ] Edit message — add "editedAt" field to Message model + socket event
+[ ] Typing indicator — broadcast typing/stopTyping socket events per chat room
+[ ] Online/offline presence — track userId→socketId map, emit userOnline/userOffline
+[ ] Unread message count — endpoint to get unread count per chat (isRead field exists)
+[ ] Pagination — all list endpoints (users, messages, friends) need skip/take/cursor
+[ ] Group chat API — create group, add/remove members, set group name (schema supports it)
+[ ] User profile update — endpoint to change name, email, password
+[ ] Password reset flow — forgot-password / reset-token via email
+[ ] Refresh token rotation — avoid hard logout on JWT expiry
+[ ] File/image uploads — Multer + S3/Cloudinary, add "type" field on Message
+[ ] Block user — prevent messages and friend requests from blocked users
+[ ] Search messages — full-text search within a chat
+[ ] Soft deletes — add "deletedAt" field instead of permanent delete
+
+─── DATABASE SCHEMA ────────────────
+
+[ ] Add createdAt / updatedAt timestamps on User and FriendShip
+[ ] Add editedAt DateTime? on Message
+[ ] Add deletedAt DateTime? on Message (soft delete)
+[ ] Add name String? on Chat (for group chats)
+[ ] Add profilePicture String? on User
+[ ] Add lastSeen DateTime? on User (presence tracking)
+[ ] Add compound index on FriendShip(senderId, receiverId, status)
+
+─── TESTING & DOCS ─────────────────
+
+[ ] Add unit tests for services (Vitest or Jest)
+[ ] Add integration tests for routes
+[ ] Add API documentation (swagger-jsdoc + swagger-ui-express)

@@ -10,7 +10,7 @@
     "noEmitOnError": true,  // -> wont compile if there is an error 
     "strict": true,
     "esModuleInterop": true,
-    "lib": ["ESNext"]
+    "lib": ["esnext"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

@@ -6,3 +6,4 @@ export const router = Router();
 
 router.get("/me", authMiddleware.protect, userController.getMe);
 router.get("/allNameEmail", authMiddleware.protect, userController.getAllUsersNameEmail);
+router.patch("/updateGoogleUser", authMiddleware.protect, userController.updateGoogleUser);

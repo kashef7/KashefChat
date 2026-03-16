@@ -47,7 +47,15 @@ export const findNameEmailById = async(id:string) =>{
     select: {
       name: true,
       email: true,
-      id: true
+      id: true,
+      userType:true
     }
   });
+}
+
+export const updateUserbyId = async(id:string,data:any) =>{
+  return await prisma.user.update({
+    where:{id:id},
+    data:data
+  })
 }

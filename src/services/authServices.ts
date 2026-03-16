@@ -21,6 +21,7 @@ export const signUp = async (body:SignUpDTO) =>{
       name:      body.name,
       email:     body.email,
       password:  hashedPassword,
+      userType:  "Local",
       publicKey: body.publicKey,
       KeyBackup: {
         create: {
