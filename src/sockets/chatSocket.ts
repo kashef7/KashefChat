@@ -13,7 +13,6 @@ export const onChatJoin = (_io: Server, socket: Socket) => {
     try {
       const parsed = joinChatSchema.parse(data);
       socket.join(parsed.chatId);
-      console.log(`Joined Room: ${parsed.chatId}`);
     } catch {
       socket.emit("messageError", { error: "Invalid chatId" });
     }

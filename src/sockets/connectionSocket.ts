@@ -8,7 +8,6 @@ export const onConnect = (io:Server) =>{
   
   socket.on("join", (userId: string) => {
       socket.join(userId);
-      console.log(`User ${userId} joined room`);
     });
 
   friendSocket.onFriendRequestSent(io, socket);

@@ -76,6 +76,7 @@
         // ==========================================
         // You will implement the fetch calls here to connect to your backend.
         import { KeyGenerationService } from "./Services/keyGenerationService.js";
+        import { CONFIG } from "./config.js";
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -84,7 +85,7 @@
             const password = document.getElementById("login-password").value
             
             // TODO: Send POST request to /api/auth/login
-            const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/logIn", {
+            const Response = await fetch(`${CONFIG.API_BASE_URL}/auth/logIn`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
@@ -117,7 +118,7 @@
             const password = document.getElementById("signup-password").value
             const confirmPassword = document.getElementById("signup-ConfirmPassword").value
             const keyGenerationResult = await KeyGenerationService(password);
-            const Response = await fetch("http://127.0.0.1:3000/api/v1/auth/signUp", {
+            const Response = await fetch(`${CONFIG.API_BASE_URL}/auth/signUp`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
@@ -144,7 +145,7 @@
         });
 
           document.getElementById('google-login-btn').addEventListener('click', () => {
-            window.location.href = "http://localhost:3000/api/v1/auth/google";
+            window.location.href = CONFIG.GOOGLE_AUTH_URL;
           });
     </script>
 </body>

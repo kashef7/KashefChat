@@ -79,12 +79,13 @@
         // SCRIPT SECTION
         // ==========================================
         import { KeyGenerationService } from "./Services/keyGenerationService.js";
-        const socket = io('http://127.0.0.1:3000',{ withCredentials: true })
+        import { CONFIG } from "./config.js";
+        const socket = io(CONFIG.SOCKET_URL,{ withCredentials: true })
 
 
         window.addEventListener("load", async (event) => {
             try {
-                const userRaw = await fetch("http://127.0.0.1:3000/api/v1/user/me",{
+                const userRaw = await fetch(`${CONFIG.API_BASE_URL}/user/me`,{
                   method:"GET",
                   credentials:"include"
                 })
@@ -97,11 +98,11 @@
                     return;
                 }
                 
-                const pendingFriendRequestsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/PendingRequestsReceived",{
+                const pendingFriendRequestsRaw = await fetch(`${CONFIG.API_BASE_URL}/friendship/PendingRequestsReceived`,{
                   method:"GET",
                   credentials:"include"
                 })
-                const friendsRaw = await fetch("http://127.0.0.1:3000/api/v1/friendship/",{
+                const friendsRaw = await fetch(`${CONFIG.API_BASE_URL}/friendship/`,{
                   method:"GET",
                   credentials:"include"
                 })
@@ -113,7 +114,7 @@
                 if(user.data.user.userType === "Google" && !localStorage.getItem("privateKey")){
                   const keyGenerationResult = await KeyGenerationService(user.data.user.id);
                   localStorage.setItem("privateKey", keyGenerationResult.privateKey);
-                  await fetch("http://127.0.0.1:3000/api/v1/user/updateGoogleUser",{
+                  await fetch(`${CONFIG.API_BASE_URL}/user/updateGoogleUser`,{
                     method:"PATCH",
                     credentials:"include",
                     headers:{
@@ -180,7 +181,7 @@
         
         document.getElementById('send-request-btn').addEventListener('click', async() => {
             const input = document.getElementById('friend-input').value;
-            const response = await fetch("http://127.0.0.1:3000/api/v1/friendship/sendFriendRequest", {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/friendship/sendFriendRequest`, {
             method: "POST",
             credentials: "include",
             headers: {
@@ -207,7 +208,7 @@
 
         window.startChat = async function(friendId) {
             try {
-                const response = await fetch("http://127.0.0.1:3000/api/v1/chat/startChat", {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/chat/startChat`, {
                     method: "POST",
                     credentials: "include",
                     headers: {
@@ -234,7 +235,7 @@
 
         window.handleLogout = async function() {
             try {
-                const response = await fetch("http://127.0.0.1:3000/api/v1/auth/logOut", {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/auth/logOut`, {
                     method: "POST",
                     credentials: "include"
                 });
@@ -260,7 +261,7 @@
         })
         window.handleFriendRequest = async function(requestId, action) {
             try {
-                const response = await fetch("http://127.0.0.1:3000/api/v1/friendship/respondToRequest", {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/friendship/respondToRequest`, {
                     method: "POST",
                     credentials: "include",
                     headers: {

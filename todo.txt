@@ -17,7 +17,7 @@
 [ ] Authorize deleteMessage — verify the user owns the message server-side
 [✅] Add rate limiting (express-rate-limit) on auth routes to prevent brute-force
 [✅] Move CORS origin to env variable (hardcoded in app.ts and server.ts)
-[] Add message encryption (end-to-end)
+[✅] Add message encryption (end-to-end)
 
 ─── ARCHITECTURE IMPROVEMENTS ──────
 

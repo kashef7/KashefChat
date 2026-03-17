@@ -112,18 +112,22 @@
         <button id="send-btn">Send</button>
     </div>
 
-    <script>
+    <script type="module">
         // ==========================================
         // SCRIPT SECTION
         // ==========================================
+        import * as MessageEncryptionServices from "./Services/messageEndToEndEncryptionService.js";
+        import { CONFIG } from "./config.js";
         const urlParams = new URLSearchParams(window.location.search);
         const chatId = urlParams.get('chatId');
         
         let currentUserId = null;
         let currentUserName = null;
+        let currentUserPublicKey = null;
         let selectedMessageId = null;
+        let currentFriend = null;
 
-        const socket = io('http://127.0.0.1:3000', { withCredentials: true });
+        const socket = io(CONFIG.SOCKET_URL, { withCredentials: true });
 
         const sendBtn = document.getElementById('send-btn');
         const messageInput = document.getElementById('message-input');
@@ -145,7 +149,7 @@
         window.addEventListener('load', async () => {
             try {
                 // Get current user info
-                const userResponse = await fetch("http://127.0.0.1:3000/api/v1/user/me", {
+                const userResponse = await fetch(`${CONFIG.API_BASE_URL}/user/me`, {
                     method: "GET",
                     credentials: "include"
                 });
@@ -160,8 +164,9 @@
                 const userData = await userResponse.json();
                 currentUserId = userData.data.user.id;
                 currentUserName = userData.data.user.name;
+                currentUserPublicKey = userData.data.user.publicKey;
                 // Get chat details and messages
-                const chatResponse = await fetch(`http://127.0.0.1:3000/api/v1/chat/${chatId}`, {
+                const chatResponse = await fetch(`${CONFIG.API_BASE_URL}/chat/${chatId}`, {
                     method: "GET",
                     credentials: "include"
                 });
@@ -176,6 +181,7 @@
                 // Find the other user (friend)
                 const friend = chat.members.find(member => member.userId !== currentUserId);
                 if (friend) {
+                    currentFriend = friend;
                     document.getElementById('friend-name').textContent = friend.user.name;
                 }
 
@@ -185,17 +191,22 @@
                 // Load existing messages
                 chatBox.innerHTML = '';
                 if (chat.messages && chat.messages.length > 0) {
-                    // Messages are in descending order, reverse them
-                    chat.messages.reverse().forEach(message => {
+                    const privateKey = localStorage.getItem("privateKey");
+                    const reversedMessages = [...chat.messages].reverse();
+
+                    for (const message of reversedMessages) {
                         const isSent = message.senderId === currentUserId;
-                        const senderName = isSent ? 'You' : friend.user.name;
-                        appendMessage(message.id, message.content, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
+                        const senderName = isSent ? 'You' : (friend ? friend.user.name : 'Unknown');
+                        
+                        let displayContent = await decodeMessageContent(message.content, isSent, privateKey);
+
+                        appendMessage(message.id, displayContent, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
                         
                         // Mark received messages as read
                         if (!isSent && !message.isRead) {
                             socket.emit('markMessageAsRead', { messageId: message.id, chatId: chatId });
                         }
-                    });
+                    }
                 } else {
                     chatBox.innerHTML = '<p style="text-align: center; color: #999;">No messages yet. Start the conversation!</p>';
                 }
@@ -208,18 +219,65 @@
         });
 
         // Send message function
-        function sendMessage() {
+        async function sendMessage() {
             const text = messageInput.value.trim();
             if (!text) return;
 
+            let encryptedForMine = text;
+            let encryptedForTheirs = text;
+
+            try {
+                if (currentUserPublicKey) {
+                    encryptedForMine = await MessageEncryptionServices.encryptMessage(text, currentUserPublicKey);
+                }
+                if (currentFriend && currentFriend.user.publicKey) {
+                    encryptedForTheirs = await MessageEncryptionServices.encryptMessage(text, currentFriend.user.publicKey);
+                }
+            } catch (e) {
+                console.error('Encryption error:', e);
+            }
+
+            const payloadString = JSON.stringify({
+                mine: encryptedForMine,
+                theirs: encryptedForTheirs
+            });
+
             socket.emit('sendMessage', { 
                 chatId: chatId, 
-                content: text,
+                content: payloadString,
                 senderId: currentUserId,
                 senderName: currentUserName
             });
 
             messageInput.value = ''; // Clear input
+        }
+
+        async function decodeMessageContent(rawContent, isSent, privateKey) {
+            let parsed = null;
+            try {
+                parsed = JSON.parse(rawContent);
+            } catch(e) {}
+            
+            if (parsed && typeof parsed === 'object' && (parsed.mine !== undefined || parsed.theirs !== undefined)) {
+                if (!privateKey) return "🔒 [Encrypted]";
+                const toDecrypt = isSent ? parsed.mine : parsed.theirs;
+                if (!toDecrypt) return "🔒 [Encrypted]";
+                try {
+                    return await MessageEncryptionServices.decryptMessage(toDecrypt, privateKey);
+                } catch(e) {
+                    return "🔒 [Decryption Failed]";
+                }
+            } else {
+                // Fallback for older messages
+                if (!isSent && privateKey && rawContent) {
+                    try {
+                        return await MessageEncryptionServices.decryptMessage(rawContent, privateKey);
+                    } catch(e) {
+                      return rawContent;
+                    }
+                }
+                return rawContent;
+            }
         }
 
         sendBtn.addEventListener('click', sendMessage);
@@ -301,10 +359,14 @@
         }
 
         // Listener for incoming messages
-        socket.on('receiveMessage', (message) => {
+        socket.on('receiveMessage', async (message) => {
             const isSent = message.senderId === currentUserId;
             const senderName = isSent ? 'You' : message.senderName;
-            appendMessage(message.id, message.content, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
+            
+            const privateKey = localStorage.getItem("privateKey");
+            let displayContent = await decodeMessageContent(message.content, isSent, privateKey);
+
+            appendMessage(message.id, displayContent, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
             
             // If received message, mark as read
             if (!isSent) {

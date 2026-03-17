@@ -18,7 +18,7 @@ export const findChatBetweenUsersOptimized = async (user1Id: string, user2Id: st
       members: {
         include: {
           user: {
-            select: { id: true, name: true, email: true }
+            select: { id: true, name: true, email: true, publicKey: true }
           }
         }
       },
@@ -59,7 +59,7 @@ export const findChatById = async (chatId: string) => {
       members: {
         include: {
           user: {
-            select: { id: true, name: true, email: true }
+            select: { id: true, name: true, email: true, publicKey: true }
           }
         }
       },

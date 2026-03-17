@@ -48,7 +48,8 @@ export const findNameEmailById = async(id:string) =>{
       name: true,
       email: true,
       id: true,
-      userType:true
+      userType:true,
+      publicKey:true
     }
   });
 }
