@@ -1,17 +1,31 @@
 import prisma from "../prismaClient";
+import { MessageKey } from "../types/messageKeyType";
 
 export const createMessage = async (
   chatId: string,
   content: string,
-  senderId: string
+  senderId: string,
+  iv:string,
+  keys:MessageKey[]
 ) => {
-  return prisma.message.create({
-    data: {
-      content,
-      senderId,
-      chatId,
-    },
+  return prisma.$transaction(async (tx) =>{
+      const message = await tx.message.create({
+        data:{
+          content,
+          iv,
+          senderId,
+          chatId
+        }
+      })
+      await tx.messageKey.createMany({
+      data: keys.map(({ userId, encryptedKey }) => ({
+      messageId: message.id,
+      userId,
+      encryptedKey,
+    })),
   });
+  return message;
+  })
 };
 
 export const deleteMessage = async (messageId: string) => {

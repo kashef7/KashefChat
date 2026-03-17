@@ -23,7 +23,7 @@ export const startChat = async(user1Id: string, user2Id: string) => {
 }
 
 export const getChatById = async (chatId: string, userId: string) => {
-  const chat = await chatRepo.findChatById(chatId);
+  const chat = await chatRepo.findChatById(chatId,userId);
   
   if (!chat) {
     throw new AppError("Chat not found", 404);

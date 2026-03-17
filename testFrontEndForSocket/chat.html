@@ -117,6 +117,7 @@
         // SCRIPT SECTION
         // ==========================================
         import * as MessageEncryptionServices from "./Services/messageEndToEndEncryptionService.js";
+        import { importRsaPublicKey } from "./Services/messageEndToEndEncryptionService.js";
         import { CONFIG } from "./config.js";
         const urlParams = new URLSearchParams(window.location.search);
         const chatId = urlParams.get('chatId');
@@ -198,7 +199,8 @@
                         const isSent = message.senderId === currentUserId;
                         const senderName = isSent ? 'You' : (friend ? friend.user.name : 'Unknown');
                         
-                        let displayContent = await decodeMessageContent(message.content, isSent, privateKey);
+                        message.encryptedKey = message.keys?.[0]?.encryptedKey;
+                        let displayContent = await decodeMessageContent(message);
 
                         appendMessage(message.id, displayContent, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
                         
@@ -223,28 +225,41 @@
             const text = messageInput.value.trim();
             if (!text) return;
 
-            let encryptedForMine = text;
-            let encryptedForTheirs = text;
+            const members = [];
 
-            try {
-                if (currentUserPublicKey) {
-                    encryptedForMine = await MessageEncryptionServices.encryptMessage(text, currentUserPublicKey);
-                }
-                if (currentFriend && currentFriend.user.publicKey) {
-                    encryptedForTheirs = await MessageEncryptionServices.encryptMessage(text, currentFriend.user.publicKey);
-                }
-            } catch (e) {
-                console.error('Encryption error:', e);
+            if (currentUserPublicKey) {
+              members.push({ userId: currentUserId, publicKeyPem: currentUserPublicKey });
             }
+            if (currentFriend?.user?.publicKey) {
+              members.push({ userId: currentFriend.userId, publicKeyPem: currentFriend.user.publicKey });
+            }
+            const aesKey = await crypto.subtle.generateKey(
+            { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']
+          );
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const ciphertext = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            aesKey,
+            new TextEncoder().encode(text)
+          );
+          const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
 
-            const payloadString = JSON.stringify({
-                mine: encryptedForMine,
-                theirs: encryptedForTheirs
-            });
+          const toBase64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+          const fromBase64 = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+
+          const keys = await Promise.all(members.map(async ({ userId, publicKeyPem }) => {
+            const rsaKey = await importRsaPublicKey(publicKeyPem); // from your service
+            const encryptedKey = await crypto.subtle.encrypt(
+              { name: 'RSA-OAEP' }, rsaKey, rawAesKey
+            );
+            return { userId, encryptedKey: toBase64(encryptedKey) };
+          }));
 
             socket.emit('sendMessage', { 
-                chatId: chatId, 
-                content: payloadString,
+                chatId,
+                content: toBase64(ciphertext),
+                iv: toBase64(iv),
+                keys,
                 senderId: currentUserId,
                 senderName: currentUserName
             });
@@ -252,33 +267,20 @@
             messageInput.value = ''; // Clear input
         }
 
-        async function decodeMessageContent(rawContent, isSent, privateKey) {
-            let parsed = null;
-            try {
-                parsed = JSON.parse(rawContent);
-            } catch(e) {}
-            
-            if (parsed && typeof parsed === 'object' && (parsed.mine !== undefined || parsed.theirs !== undefined)) {
-                if (!privateKey) return "🔒 [Encrypted]";
-                const toDecrypt = isSent ? parsed.mine : parsed.theirs;
-                if (!toDecrypt) return "🔒 [Encrypted]";
-                try {
-                    return await MessageEncryptionServices.decryptMessage(toDecrypt, privateKey);
-                } catch(e) {
-                    return "🔒 [Decryption Failed]";
-                }
-            } else {
-                // Fallback for older messages
-                if (!isSent && privateKey && rawContent) {
-                    try {
-                        return await MessageEncryptionServices.decryptMessage(rawContent, privateKey);
-                    } catch(e) {
-                      return rawContent;
-                    }
-                }
-                return rawContent;
-            }
+        async function decodeMessageContent(message) {
+        const privateKey = localStorage.getItem('privateKey');
+        if (!privateKey || !message.encryptedKey) return '🔒 [Encrypted]';
+        try {
+          return await MessageEncryptionServices.decryptMessage(
+            message.content,
+            message.iv,
+            message.encryptedKey, // the MessageKey row for the current user
+            privateKey
+          );
+        } catch {
+          return '🔒 [Decryption Failed]';
         }
+      }
 
         sendBtn.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
@@ -364,7 +366,8 @@
             const senderName = isSent ? 'You' : message.senderName;
             
             const privateKey = localStorage.getItem("privateKey");
-            let displayContent = await decodeMessageContent(message.content, isSent, privateKey);
+            message.encryptedKey = message.keys?.find(k => k.userId === currentUserId)?.encryptedKey;
+            let displayContent = await decodeMessageContent(message);
 
             appendMessage(message.id, displayContent, isSent ? 'sent' : 'received', senderName, message.sentAt, isSent);
             

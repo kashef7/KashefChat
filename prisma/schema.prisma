@@ -19,6 +19,7 @@ model User {
   receivedFriendships FriendShip[]  @relation("Receiver")
   messages            Message[]
   chatMemberships     ChatMembers[]
+  keys         MessageKey[]
 }
 
 enum UserType {
@@ -56,16 +57,32 @@ enum FriendShipStatus {
 }
 
 model Message {
-  id       String   @id @default(uuid())
+  id       String       @id @default(uuid())
   content  String
-  sender   User     @relation(fields: [senderId], references: [id])
+  iv       String
+  sender   User         @relation(fields: [senderId], references: [id])
   senderId String
-  isRead   Boolean  @default(false)
-  sentAt   DateTime @default(now())
-  chat     Chat     @relation(fields: [chatId], references: [id])
+  isRead   Boolean      @default(false)
+  sentAt   DateTime     @default(now())
+  chat     Chat         @relation(fields: [chatId], references: [id])
+  keys     MessageKey[]
   chatId   String
 
   @@index([chatId])
+}
+
+model MessageKey {
+  id String @id @default(uuid())
+
+  messageId     String
+  userId        String
+  encryptedKey String
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 model Chat {

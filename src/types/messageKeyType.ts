@@ -1,0 +1,1 @@
+export type MessageKey = { userId: string; encryptedKey: string };

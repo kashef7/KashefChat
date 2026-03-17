@@ -22,6 +22,13 @@ export const joinChatSchema = z.object({
 export const sendMessageSchema = z.object({
   chatId: idSchema,
   content: contentSchema,
+  iv: z.string(),
+  keys: z.array(
+    z.object({
+      userId: idSchema,
+      encryptedKey: z.string()
+    })
+  ),
   senderId: idSchema,
   senderName: z.string().min(1).max(50),
 });

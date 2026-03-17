@@ -1,10 +1,10 @@
 import AppError from "../utils/AppError";
 import * as messageRepo from "../repositories/messageRepos"
+import { MessageKey } from "../types/messageKeyType";
 
 
-export const createMessage = async(chatId: string, content: string, senderId: string) =>{
-  
-  return await messageRepo.createMessage(chatId,content,senderId);
+export const createMessage = async(chatId: string, content: string, senderId: string,iv:string,keys:MessageKey[]) =>{
+  return await messageRepo.createMessage(chatId,content,senderId,iv,keys);
 }
 
 export const deleteMessage = async(messageId: string,senderId:string) =>{

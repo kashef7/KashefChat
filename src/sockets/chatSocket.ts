@@ -27,7 +27,9 @@ export const onSendMessage = (io: Server, socket: Socket) => {
       const message = await messageServices.createMessage(
         parsed.chatId,
         parsed.content,
-        parsed.senderId
+        parsed.senderId,
+        parsed.iv,
+        parsed.keys
       );
 
       io.to(parsed.chatId).emit("receiveMessage", {
@@ -35,7 +37,9 @@ export const onSendMessage = (io: Server, socket: Socket) => {
         content: message.content,
         senderId: message.senderId,
         senderName: parsed.senderName,
-        sentAt: message.sentAt
+        sentAt: message.sentAt,
+        iv: message.iv,
+        keys: parsed.keys
       });
 
     } catch (error) {

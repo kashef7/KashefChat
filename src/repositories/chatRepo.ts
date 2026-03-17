@@ -51,7 +51,7 @@ export const createChat = async (user1Id: string, user2Id: string) => {
   });
 }
 
-export const findChatById = async (chatId: string) => {
+export const findChatById = async (chatId: string,userId: string) => {
   const validChatId = userValidation.idSchema.parse(chatId);
   return await prisma.chat.findUnique({
     where: { id: validChatId },
@@ -59,7 +59,11 @@ export const findChatById = async (chatId: string) => {
       members: {
         include: {
           user: {
-            select: { id: true, name: true, email: true, publicKey: true }
+            select: { id: true, name: true, email: true, publicKey: true,keys:{
+              where: {userId:userId},
+              select: {encryptedKey: true},
+              take: 1,
+            } }
           }
         }
       },
