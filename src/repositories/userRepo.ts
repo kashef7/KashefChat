@@ -49,7 +49,14 @@ export const findNameEmailById = async(id:string) =>{
       email: true,
       id: true,
       userType:true,
-      publicKey:true
+      publicKey:true,
+      KeyBackup: {
+        select: {
+          ciphertext: true,
+          salt: true,
+          iv: true,
+        },
+      },
     }
   });
 }

@@ -74,17 +74,53 @@
         // ==========================================
         // SCRIPT SECTION
         // ==========================================
-        // You will implement the fetch calls here to connect to your backend.
         import { KeyGenerationService } from "./Services/keyGenerationService.js";
         import { CONFIG } from "./config.js";
 
+        const base64ToArrayBuffer = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const arrayBufferToBase64 = (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+        async function decryptPrivateKeyFromBackup(keyBackup, password) {
+            if (!keyBackup?.ciphertext || !keyBackup?.salt || !keyBackup?.iv) {
+                throw new Error("Key backup data missing");
+            }
+            const salt = base64ToArrayBuffer(keyBackup.salt);
+            const iv = base64ToArrayBuffer(keyBackup.iv);
+            const ciphertext = base64ToArrayBuffer(keyBackup.ciphertext);
+
+            const passwordKey = await window.crypto.subtle.importKey(
+                "raw",
+                new TextEncoder().encode(password),
+                "PBKDF2",
+                false,
+                ["deriveKey"]
+            );
+            const derivedKey = await window.crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt,
+                    iterations: 100000,
+                    hash: "SHA-256",
+                },
+                passwordKey,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["decrypt"]
+            );
+
+            const decryptedPrivateKey = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv },
+                derivedKey,
+                ciphertext
+            );
+            return arrayBufferToBase64(decryptedPrivateKey);
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: Collect data from inputs
-            const email = document.getElementById("login-email").value
-            const password = document.getElementById("login-password").value
-            
-            // TODO: Send POST request to /api/auth/login
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+
             const Response = await fetch(`${CONFIG.API_BASE_URL}/auth/logIn`, {
               method: "POST",
               headers: {
@@ -92,31 +128,54 @@
               },
               credentials: "include",
               body: JSON.stringify({
-                email: email,
-                password: password
+                email,
+                password
               })
-            })
-            
+            });
+
             const data = await Response.json();
 
-            if(Response.status === 200){
-              console.log("Login submitted");
-              window.location.href = 'friends.html';
+            if (Response.status === 200) {
+              try {
+                const meResponse = await fetch(`${CONFIG.API_BASE_URL}/user/me`, {
+                  method: "GET",
+                  credentials: "include"
+                });
+
+                if (!meResponse.ok) {
+                  throw new Error("Could not fetch user info after login.");
+                }
+
+                const meData = await meResponse.json();
+                const user = meData.data.user;
+
+                // Restore private key from KeyBackup if missing locally
+                if (!localStorage.getItem("privateKey") && user.KeyBackup) {
+                  try {
+                    const restoredPrivateKey = await decryptPrivateKeyFromBackup(user.KeyBackup, password);
+                    localStorage.setItem("privateKey", restoredPrivateKey);
+                  } catch (restoreError) {
+                    console.warn("Could not restore private key from backup:", restoreError);
+                  }
+                }
+
+                console.log("Login submitted");
+                window.location.href = 'friends.html';
+              } catch (err) {
+                console.error("Login succeeded but user data fetch failed:", err);
+                window.location.href = 'friends.html';
+              }
+            } else {
+              console.error(data.error?.message || "Login failed");
             }
-            else{
-              console.error(data.error.message);
-            }
-            
-            
         });
 
         document.getElementById('signup-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: Collect data from inputs
-            const username = document.getElementById("signup-username").value
-            const email = document.getElementById("signup-email").value
-            const password = document.getElementById("signup-password").value
-            const confirmPassword = document.getElementById("signup-ConfirmPassword").value
+            const username = document.getElementById("signup-username").value;
+            const email = document.getElementById("signup-email").value;
+            const password = document.getElementById("signup-password").value;
+            const confirmPassword = document.getElementById("signup-ConfirmPassword").value;
             const keyGenerationResult = await KeyGenerationService(password);
             const Response = await fetch(`${CONFIG.API_BASE_URL}/auth/signUp`, {
               method: "POST",
@@ -132,21 +191,20 @@
                 publicKey: keyGenerationResult.publicKey,
                 encryptedPrivateKey: keyGenerationResult.encryptedPrivateKey
               })
-            })
+            });
             const data = await Response.json();
-            if(Response.status === 200){
+            if (Response.status === 200) {
               localStorage.setItem("privateKey", keyGenerationResult.privateKey);
               console.log("Signup successful");
               window.location.href = 'friends.html';
-            }
-            else{
-              console.error(data.error.message);
+            } else {
+              console.error(data.error?.message || data.error || "Signup failed");
             }
         });
 
-          document.getElementById('google-login-btn').addEventListener('click', () => {
+        document.getElementById('google-login-btn').addEventListener('click', () => {
             window.location.href = CONFIG.GOOGLE_AUTH_URL;
-          });
+        });
     </script>
 </body>
 </html>

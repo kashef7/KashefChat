@@ -235,6 +235,7 @@
 
         window.handleLogout = async function() {
             try {
+                localStorage.removeItem("privateKey");
                 const response = await fetch(`${CONFIG.API_BASE_URL}/auth/logOut`, {
                     method: "POST",
                     credentials: "include"
