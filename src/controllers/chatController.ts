@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import * as chatServices from "../services/chatServices";
 import * as userValidation from "../validators/userValidators";
+import * as paginationValidation from "../validators/paginationValidators";
 
 export const startChat = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -22,7 +23,10 @@ export const getChatById = async (req: Request, res: Response, next: NextFunctio
   try {
     const validUser1Id = userValidation.idSchema.parse(req.user!.id);
     const validChatId = userValidation.idSchema.parse(req.params.chatId);
-    const chat = await chatServices.getChatById(validChatId, validUser1Id);
+    const parsed = paginationValidation.paginationSchema.parse(req.query);
+    const chat = await chatServices.getChatById(validChatId, validUser1Id,parsed);
+
+
     res.status(200).json({
       status: "success",
       data: {

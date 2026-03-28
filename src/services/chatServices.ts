@@ -1,5 +1,6 @@
 import AppError from "../utils/AppError";
 import * as chatRepo from "../repositories/chatRepo";
+import { CursorPaginationQuery} from "../types/paginationType";
 
 export const startChat = async(user1Id: string, user2Id: string) => {
   if(!user1Id || !user2Id) {
@@ -22,8 +23,8 @@ export const startChat = async(user1Id: string, user2Id: string) => {
   return chat;
 }
 
-export const getChatById = async (chatId: string, userId: string) => {
-  const chat = await chatRepo.findChatById(chatId,userId);
+export const getChatById = async (chatId: string, userId: string,query:CursorPaginationQuery) => {
+  const chat = await chatRepo.findChatById(chatId,userId,query);
   
   if (!chat) {
     throw new AppError("Chat not found", 404);

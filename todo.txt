@@ -34,7 +34,7 @@
 [ ] Typing indicator — broadcast typing/stopTyping socket events per chat room
 [ ] Online/offline presence — track userId→socketId map, emit userOnline/userOffline
 [ ] Unread message count — endpoint to get unread count per chat (isRead field exists)
-[ ] Pagination — all list endpoints (users, messages, friends) need skip/take/cursor
+[🔄️] Pagination — all list endpoints (users, messages, friends) need skip/take/cursor
 [ ] Group chat API — create group, add/remove members, set group name (schema supports it)
 [ ] User profile update — endpoint to change name, email, password
 [ ] Password reset flow — forgot-password / reset-token via email
