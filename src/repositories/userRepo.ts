@@ -12,6 +12,18 @@ export const findByEmail = async(email:string) =>{
   });
 }
 
+export const findByEmailOrName = async(data:string) =>{
+  return await prisma.user.findMany({
+    where:{
+      OR:[
+        {email:data},
+        {name:data}
+      ]
+    }
+  });
+}
+
+
 export const getIdByEmail = async(email:string) =>{
   return await prisma.user.findUnique({
     where: {email:email},

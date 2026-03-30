@@ -25,6 +25,13 @@ export const emailSchema = z.string().email({ message: "Invalid email address" }
 
 export const idSchema = z.string().uuid("Invalid id format");
 
+export const NameOrEmailSchema = z.union([ 
+  z.string()
+    .min(3, { message: "Name must be at least 3 characters" })
+    .max(40, { message: "Name must be at most 40 characters" }),
+  emailSchema
+]);
+
 export const updateUserSchema = createUserSchema.partial();
 
 export const loginSchema = createUserSchema.pick({
@@ -36,6 +43,7 @@ export const googleLoginSchema = createUserSchema.pick({
   email: true,
   name: true,
 });
+
 
 
 export type SignUpDTO = z.infer<typeof createUserSchema>;

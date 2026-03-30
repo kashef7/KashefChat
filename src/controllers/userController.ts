@@ -39,6 +39,25 @@ export const getMe = async (req:Request,res:Response,next:NextFunction) =>{
   }
 }
 
+export const searchForUser = async (req:Request,res:Response,next:NextFunction) =>{
+  try{
+    const validData = userValidation.NameOrEmailSchema.parse(req.query.q);
+    const user = await userServices.searchForUser(validData);
+    if(!user) {
+      return next(new AppError("No user with that name or email", 404));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data:{
+        user: user
+      }
+    })
+  } catch(err){
+    next(err);
+  }
+}
+
 export const updateGoogleUser = async (req:Request,res:Response,next:NextFunction) =>{
   try{
     const validUserId = userValidation.idSchema.parse(req.user!.id);
