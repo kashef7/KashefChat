@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "prismaMig": "prisma migrate dev --name Test"
   },
   "keywords": [],
