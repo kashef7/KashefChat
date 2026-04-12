@@ -98,3 +98,107 @@
     display: none;
   }
 }
+
+/* ─── Mobile layout fixes ──────────────────────────────────────────────────
+   All rules are scoped to max-width: 768px so desktop is completely unaffected.
+   Changes are CSS/structural only — no JS, socket, or business-logic changes.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* 1. Lock the entire page so only inner containers scroll.
+        dvh respects the browser chrome height on mobile.          */
+  html,
+  body {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* 2. #root fills the viewport exactly — no extra height, no scroll. */
+  #root {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    /* Reset the desktop App.css styles that add padding/centering */
+    max-width: 100% !important;
+    padding: 0 !important;
+    text-align: left !important;
+  }
+
+  /* ── Chat page ─────────────────────────────────────────────────────────
+     The Chat component renders a flex-col div.flex.h-screen.bg-background.
+     On mobile we override h-screen → 100dvh and clip overflow so the page
+     itself never scrolls. Only the messages container scrolls internally. */
+
+  /* Outermost chat wrapper (flex h-screen flex-col) */
+  .flex.h-screen.flex-col.bg-background {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    /* Respect top notch (status bar) */
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Chat header — stays fixed at top, respects notch */
+  .flex.h-screen.flex-col.bg-background > header {
+    flex-shrink: 0;
+  }
+
+  /* Messages scroll container — takes all remaining space,
+     scrolls internally, never overflows the viewport.        */
+  .flex.h-screen.flex-col.bg-background > div.flex-1.overflow-y-auto {
+    flex: 1 1 0;
+    min-height: 0;          /* required for flex child scroll */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Input area — shrinks to content, respects home indicator at bottom */
+  .flex.h-screen.flex-col.bg-background > div.border-t.border-border.bg-background {
+    flex-shrink: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* 3. Prevent iOS auto-zoom: all text inputs & textareas need ≥16px.
+        This targets the chat input specifically via its Tailwind classes. */
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* ── Layout pages (Home, Search, Notifications, Profile) ────────────────
+     Layout.tsx renders: div.flex.min-h-screen.flex-col > main.flex-1.pb-16 + BottomNav.
+     On mobile we cap the height and hide overflow so the page doesn't scroll. */
+
+  div.flex.min-h-screen.flex-col.bg-background {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    /* Respect top notch */
+    padding-top: env(safe-area-inset-top);
+  }
+
+  div.flex.min-h-screen.flex-col.bg-background > main.flex-1 {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
+
+  /* ── BottomNav — safe-area bottom padding for home indicator ─────────── */
+  nav.fixed.bottom-0 {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    /* Bump pb-16 on main to account for the taller nav */
+  }
+
+  /* Compensate main's bottom padding when safe area grows the nav */
+  div.flex.min-h-screen.flex-col.bg-background > main.flex-1.pb-16 {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
