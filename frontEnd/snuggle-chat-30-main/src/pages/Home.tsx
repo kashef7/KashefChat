@@ -4,10 +4,12 @@ import { useAuth } from "@/context/AuthContext";
 import { getFriends } from "@/api/friendship";
 import { startChat } from "@/api/chat";
 import ChatRow from "@/components/ChatRow";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Home() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [friends, setFriends] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -51,12 +53,25 @@ export default function Home() {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">KashefChat</h1>
-        <button
-          onClick={() => navigate("/notifications")}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full bg-accent transition-colors hover:bg-secondary"
-        >
-          <Bell className="h-5 w-5 text-foreground" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-accent transition-colors hover:bg-secondary"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-foreground" />
+            ) : (
+              <Moon className="h-5 w-5 text-foreground" />
+            )}
+          </button>
+          <button
+            onClick={() => navigate("/notifications")}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-accent transition-colors hover:bg-secondary"
+          >
+            <Bell className="h-5 w-5 text-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Search */}
