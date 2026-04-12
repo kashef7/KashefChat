@@ -67,9 +67,11 @@ export const logOut = (res: Response) => {
 
   const COOKIE_EXPIRES_IN_DAYS = Number(process.env.JWT_EXPIRES_IN) || 30;
 
-  const cookieOptions = {
+  const cookieOptions: any = {
     expires: new Date(Date.now() + COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000),
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
   };
   res.clearCookie("jwt", cookieOptions);
 };
