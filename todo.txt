@@ -1,0 +1,65 @@
+KashefChat - Portfolio Roadmap & TODO
+=====================================
+
+[ ] START HERE: Fix the Backend Build Script
+    - Location: package.json (backend)
+    - Action: Change "build": "tsc --noEmit" to "build": "tsc", and add a "start": "node dist/server.js" script.
+
+[ ] START HERE: Eradicate "any" Types
+    - Location: src/repositories/userRepo.ts, src/services/googleAuthServices.ts
+    - Action: Replace `any` with strict Zod inference types or Prisma's generated types (e.g., Prisma.UserCreateInput).
+
+[ ] START HERE: Add Unit Tests for Encryption
+    - Location: test/ (backend) or frontend crypto tests
+    - Action: Write `vitest` tests for `messageEncryption.ts` and `keyGeneration.ts` proving encrypt/decrypt works.
+
+[ ] START HERE: Fix Group Chat Read-Receipt Flaw
+    - Location: prisma/schema.prisma, src/sockets/chatSocket.ts
+    - Action: Instead of a single `isRead: Boolean` on the Message model, change the architecture to properly handle read receipts for every individual user in a group chat.
+
+[ ] START HERE: Overhaul the README
+    - Location: README.md
+    - Action: Add project tagline, tech stack grid, setup instructions, and embed the `EndToEndEncryption.drawio` architecture diagram.
+
+[ ] START HERE: Deploy to Production
+    - Action: Map Frontend to Vercel, Backend to Render.com, DB to Neon/Supabase. Ensure live links are working.
+
+--- QUICK WINS (< 1 Hour) ---
+
+[ ] Fix Global Rate Limiter
+    - Location: src/app.ts
+    - Action: Move `rateLimit({ windowMs: 15min, max: 100 })` from the global `app.use()` pipeline to specifically target just `/api/v1/auth/login` and Signup routes.
+
+[ ] Remove Hardcoded Google OAuth Frontend URL
+    - Location: src/controllers/authController.ts
+    - Action: Change the redirect URL from localhost to use `process.env.FRONTEND_URL`.
+
+[ ] Add Docker Compose Stack
+    - Location: docker-compose.yml
+    - Action: Create a compose file to spin up Postgres and Node.js for local dev deployment without installing dependencies natively.
+
+[ ] Wrap React App in Error Boundaries
+    - Location: frontend src
+    - Action: Wrap the main app routes so that a bad socket payload or component failure doesn't crash the entire screen to white.
+
+[ ] Refactor Huge Components
+    - Location: frontend/src/pages/Chat.tsx
+    - Action: Extract sub-components (MessageList, ChatInput, Header) to reduce file size and adhere to Single Responsibility Principle.
+
+--- DEEP WORK (Features & Security) ---
+
+[ ] Real-time Presence (Online/Offline Status)
+    - Action: Implement Socket.io events to broadcast when friends come online or go offline.
+
+[ ] Typing Indicators
+    - Action: Add `typing`/`stopTyping` socket events and frontend debouncers to show when a friend is typing.
+
+[ ] Sanitize Socket Payloads against XSS
+    - Action: Use DOMPurify in the frontend or strip HTML in Zod schemas on the backend before rendering chat messages.
+
+[ ] Implement Database Transactions
+    - Location: src/services/messageServices.ts (creation flow)
+    - Action: Use `prisma.$transaction` when creating Messages + MessageKeys to avoid orphan broken data if one insert fails.
+
+[ ] Message Pagination
+    - Action: Fetch historical messages in chunks (e.g., limit: 50, cursor) rather than pulling the entire chat history at once.
