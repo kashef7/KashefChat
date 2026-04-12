@@ -70,8 +70,8 @@ export const logOut = (res: Response) => {
   const cookieOptions: any = {
     expires: new Date(Date.now() + COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    secure: true,
+    sameSite: "none"
   };
   res.clearCookie("jwt", cookieOptions);
 };

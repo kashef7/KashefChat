@@ -20,8 +20,8 @@ const signIn = (user: User, res: Response) => {
   res.cookie("jwt", token, {
     httpOnly: true,
     maxAge: COOKIE_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+    secure: true,
+    sameSite: "none"
   });
   user.password = "";
 };

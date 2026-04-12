@@ -12,6 +12,7 @@ import passport from "passport";
 import path from "path";
 import "./utils/passportSetup";
 export const app = express();
+app.set("trust proxy", 1);
 
 
 const limiter = rateLimit({
