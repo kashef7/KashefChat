@@ -15,38 +15,40 @@ import Search from "@/pages/Search";
 import NotFound from "@/pages/NotFound";
 
 const App = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <SocketProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/search" element={<Search />} />
-          </Route>
-          <Route
-            path="/chat/:id"
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </SocketProvider>
-    </AuthProvider>
-  </BrowserRouter>
+  <ThemeProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <SocketProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/user/:id" element={<UserProfile />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/search" element={<Search />} />
+            </Route>
+            <Route
+              path="/chat/:id"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </SocketProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </ThemeProvider>
 );
 
 export default App;
