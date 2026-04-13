@@ -1,5 +1,5 @@
 export const CONFIG = {
-  API_BASE_URL: "https://kashefchat-production.up.railway.app/api/v1",
-  SOCKET_URL: "https://kashefchat-production.up.railway.app",
-  GOOGLE_AUTH_URL: "https://kashefchat-production.up.railway.app/api/v1/auth/google",
+  API_BASE_URL: "https://chatapi.kashefchat.cc/api/v1",
+  SOCKET_URL: "https://chatapi.kashefchat.cc",
+  GOOGLE_AUTH_URL: "https://chatapi.kashefchat.cc/api/v1/auth/google",
 };
