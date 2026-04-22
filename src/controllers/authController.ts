@@ -3,6 +3,7 @@ import { User } from "@prisma/client";
 import * as authServices from "../services/authServices";
 import signIn from "../utils/tokenGenerator";
 import * as userValidation from "../validators/userValidators";
+import AppError from "../utils/AppError";
 export const signUp = async (req:Request,res:Response,next:NextFunction) =>{
   try{
     const validSignUpBody = userValidation.createUserSchema.parse(req.body);
@@ -48,8 +49,12 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
     const user = req.user as User;
     signIn(user, res);
 
+    if(!process.env.GOOGLE_REDIRECT_URL){
+      return new AppError("Google redirect url not defined",500);
+    }
+
     if (req.accepts("html")) {
-      return res.redirect(process.env.GOOGLE_REDIRECT_URL || "http://127.0.0.1:5500/testFrontEndForSocket/friends.html");
+      return res.redirect(process.env.GOOGLE_REDIRECT_URL);
     }
 
     res.status(200).json({
