@@ -1,11 +1,9 @@
 import { Server, Socket } from "socket.io";
-import prisma from "../prismaClient";
 import * as messageServices from "../services/messageServices";
 import {
   joinChatSchema,
   sendMessageSchema,
   deleteMessageSchema,
-  markReadSchema
 } from "../validators/socketValidators";
 
 export const onChatJoin = (_io: Server, socket: Socket) => {
@@ -64,7 +62,7 @@ export const onDeleteMessage = (io: Server, socket: Socket) => {
     }
   });
 };
-export const onTyping = (io: Server, socket: Socket) => {
+export const onTyping = (_io: Server, socket: Socket) => {
   socket.on("typing", async (data) => {
     try {
       // emit to the chat room but NOT back to the sender

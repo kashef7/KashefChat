@@ -38,8 +38,3 @@ export const deleteMessageSchema = z.object({
   chatId: idSchema,
   senderId: idSchema,
 });
-
-export const markReadSchema = z.object({
-  messageId: idSchema,
-  chatId: idSchema,
-});
