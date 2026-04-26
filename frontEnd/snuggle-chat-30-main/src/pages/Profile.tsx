@@ -35,13 +35,6 @@ export default function Profile() {
         <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
 
-      {/* About */}
-      <div className="mb-6 rounded-xl bg-accent/40 p-4">
-        <h3 className="mb-2 font-semibold text-foreground">About</h3>
-        <p className="text-sm text-muted-foreground">
-          {user.about || "No bio yet. Tap edit to add one!"}
-        </p>
-      </div>
 
       {/* Logout */}
       <button
