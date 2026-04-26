@@ -1,9 +1,12 @@
+import React from "react";
+
 interface MessageBubbleProps {
+  id: string;
   content: string;
   isSent: boolean;
   senderName: string;
   timestamp: string;
-  onContextMenu?: (e: React.MouseEvent) => void;
+  onContextMenu?: (e: React.MouseEvent, id: string) => void;
 }
 
 function formatTime(dateString: string): string {
@@ -15,7 +18,8 @@ function formatTime(dateString: string): string {
   return `${hours}:${minutes} ${ampm}`;
 }
 
-export default function MessageBubble({
+export default React.memo(function MessageBubble({
+  id,
   content,
   isSent,
   senderName,
@@ -25,7 +29,7 @@ export default function MessageBubble({
   return (
     <div
       className={`flex ${isSent ? "justify-end" : "justify-start"}`}
-      onContextMenu={onContextMenu}
+      onContextMenu={onContextMenu ? (e) => onContextMenu(e, id) : undefined}
     >
       <div
         className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
@@ -42,4 +46,4 @@ export default function MessageBubble({
       </div>
     </div>
   );
-}
+})

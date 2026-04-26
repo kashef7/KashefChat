@@ -35,20 +35,6 @@ export default function Profile() {
         <p className="text-sm text-muted-foreground">{user.email}</p>
       </div>
 
-      {/* Stats */}
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        {[
-          { icon: Users, label: "Friends", value: "128" },
-          { icon: MessageCircle, label: "Chats", value: "2.4k" },
-          { icon: Mail, label: "Messages", value: "42" },
-        ].map(({ icon: Icon, label, value }) => (
-          <div key={label} className="rounded-xl bg-accent/60 py-3 text-center">
-            <p className="text-lg font-bold text-primary">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* About */}
       <div className="mb-6 rounded-xl bg-accent/40 p-4">
         <h3 className="mb-2 font-semibold text-foreground">About</h3>

@@ -31,12 +31,17 @@ export default function Chat() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   const chatBoxRef = useRef<HTMLDivElement>(null);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent, messageId: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, messageId });
+  }, []);
+
   const decodeMsg = useCallback(
-    async (msg: any): Promise<string> => {
-      const privateKey = localStorage.getItem("privateKey");
+    async (msg: any, privateKey: string | null): Promise<string> => {
       const encryptedKey = msg.keys?.find((k: any) => k.userId === user?.id)?.encryptedKey || msg.encryptedKey;
       if (!privateKey || !encryptedKey) return "🔒 [Encrypted]";
       try {
@@ -60,23 +65,26 @@ export default function Chat() {
       setHasNextPage(chat.pagination.hasNextPage);
 
       const reversed = [...chat.messages].reverse();
-      const decoded: DecodedMessage[] = [];
-      for (const msg of reversed) {
+      const privateKey = localStorage.getItem("privateKey");
+
+      const decodedPromises = reversed.map(async (msg) => {
         msg.encryptedKey = msg.keys?.find((k: any) => k.userId === user.id)?.encryptedKey;
-        const content = await decodeMsg(msg);
-        decoded.push({
+        const content = await decodeMsg(msg, privateKey);
+
+        if (msg.senderId !== user.id && !msg.isRead && socket) {
+          socket.emit("markMessageAsRead", { messageId: msg.id, chatId });
+        }
+
+        return {
           id: msg.id,
           content,
           isSent: msg.senderId === user.id,
           senderName: msg.senderId === user.id ? "You" : (friend?.user?.name ?? "Unknown"),
           timestamp: msg.sentAt,
-        });
+        };
+      });
 
-        // Mark as read
-        if (msg.senderId !== user.id && !msg.isRead && socket) {
-          socket.emit("markMessageAsRead", { messageId: msg.id, chatId });
-        }
-      }
+      const decoded = await Promise.all(decodedPromises);
       setMessages(decoded);
     } catch (err) {
       console.error("Error loading chat:", err);
@@ -97,16 +105,35 @@ export default function Chat() {
     }
   }, [loading]);
 
-  // Socket listeners
+  // Socket listeners + visibility reconnect fix
   useEffect(() => {
     if (!socket || !chatId || !user) return;
 
     socket.emit("joinChat", { chatId });
 
+    // ─── Mobile background/foreground fix ───────────────────────────────────
+    // When the user swipes away and comes back, the browser suspends the tab
+    // and the WebSocket silently dies. We detect the tab becoming visible again
+    // and either reconnect or re-join the room.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        if (!socket.connected) {
+          setIsReconnecting(true);
+          socket.connect();
+        } else {
+          // Socket is alive but the server may have evicted us from the room
+          socket.emit("joinChat", { chatId });
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    // ────────────────────────────────────────────────────────────────────────
+
     const handleReceive = async (message: any) => {
       const isSent = message.senderId === user.id;
       message.encryptedKey = message.keys?.find((k: any) => k.userId === user.id)?.encryptedKey;
-      const content = await decodeMsg(message);
+      const privateKey = localStorage.getItem("privateKey");
+      const content = await decodeMsg(message, privateKey);
       setMessages((prev) => [
         ...prev,
         {
@@ -129,18 +156,50 @@ export default function Chat() {
       setMessages((prev) => prev.filter((m) => m.id !== data.id));
     };
 
+    // Re-join the room and clear reconnecting state after every reconnect
+    const handleConnect = () => {
+      socket.emit("joinChat", { chatId });
+      setIsReconnecting(false);
+    };
+
+    const handleDisconnect = () => {
+      // Only show reconnecting if the tab is still visible (user is watching)
+      if (document.visibilityState === "visible") {
+        setIsReconnecting(true);
+      }
+    };
+
     socket.on("receiveMessage", handleReceive);
     socket.on("messageDeleted", handleDeleted);
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
 
     return () => {
       socket.off("receiveMessage", handleReceive);
       socket.off("messageDeleted", handleDeleted);
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [socket, chatId, user, decodeMsg]);
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !user || !chatId) return;
+
+    // ─── Guard: don't try to emit on a dead socket ───────────────────────────
+    if (!socket?.connected) {
+      setIsReconnecting(true);
+      socket?.connect();
+      // Re-join and retry the send once connected
+      socket?.once("connect", () => {
+        socket.emit("joinChat", { chatId });
+        // The user will need to press send again — avoids double-send complexity
+        setIsReconnecting(false);
+      });
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const members: { userId: string; publicKeyPem: string }[] = [];
     if (user.publicKey) members.push({ userId: user.id, publicKeyPem: user.publicKey });
@@ -182,18 +241,21 @@ export default function Chat() {
       setHasNextPage(chat.pagination.hasNextPage);
 
       const reversed = [...chat.messages].reverse();
-      const decoded: DecodedMessage[] = [];
-      for (const msg of reversed) {
+      const privateKey = localStorage.getItem("privateKey");
+
+      const decodedPromises = reversed.map(async (msg) => {
         msg.encryptedKey = msg.keys?.find((k: any) => k.userId === user.id)?.encryptedKey;
-        const content = await decodeMsg(msg);
-        decoded.push({
+        const content = await decodeMsg(msg, privateKey);
+        return {
           id: msg.id,
           content,
           isSent: msg.senderId === user.id,
           senderName: msg.senderId === user.id ? "You" : (friendData?.user?.name ?? "Unknown"),
           timestamp: msg.sentAt,
-        });
-      }
+        };
+      });
+
+      const decoded = await Promise.all(decodedPromises);
       setMessages((prev) => [...decoded, ...prev]);
       setTimeout(() => {
         if (chatBoxRef.current) {
@@ -222,11 +284,21 @@ export default function Chat() {
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-sm font-bold text-foreground">
           {friendName.charAt(0).toUpperCase()}
         </div>
-        <div>
+        <div className="flex-1">
           <p className="font-semibold text-foreground">{friendName}</p>
-          <p className="text-xs text-muted-foreground">online</p>
+          <p className="text-xs text-muted-foreground">
+            {isReconnecting ? "Reconnecting..." : "online"}
+          </p>
         </div>
       </header>
+
+      {/* Reconnecting banner */}
+      {isReconnecting && (
+        <div className="flex items-center justify-center gap-2 bg-yellow-500/10 px-4 py-2 text-xs text-yellow-600 dark:text-yellow-400">
+          <div className="h-3 w-3 animate-spin rounded-full border border-yellow-500 border-t-transparent" />
+          Reconnecting… messages will send once connected
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={chatBoxRef} className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
@@ -252,18 +324,12 @@ export default function Chat() {
             {messages.map((msg) => (
               <MessageBubble
                 key={msg.id}
+                id={msg.id}
                 content={msg.content}
                 isSent={msg.isSent}
                 senderName={msg.senderName}
                 timestamp={msg.timestamp}
-                onContextMenu={
-                  msg.isSent
-                    ? (e) => {
-                        e.preventDefault();
-                        setContextMenu({ x: e.clientX, y: e.clientY, messageId: msg.id });
-                      }
-                    : undefined
-                }
+                onContextMenu={msg.isSent ? handleContextMenu : undefined}
               />
             ))}
           </div>
@@ -296,12 +362,14 @@ export default function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type your message..."
-            className="flex-1 rounded-xl border border-input bg-accent/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder={isReconnecting ? "Reconnecting..." : "Type your message..."}
+            disabled={isReconnecting}
+            className="flex-1 rounded-xl border border-input bg-accent/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <button
             onClick={handleSend}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+            disabled={isReconnecting}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="h-4 w-4" />
           </button>

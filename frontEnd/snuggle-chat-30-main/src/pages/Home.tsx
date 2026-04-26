@@ -30,14 +30,15 @@ export default function Home() {
     loadFriends();
   }, [loadFriends]);
 
-  const handleStartChat = async (friendId: string) => {
+  const handleStartChat = useCallback(async (friendId?: string) => {
+    if (!friendId) return;
     try {
       const chat = await startChat(friendId);
       navigate(`/chat/${chat.id}`);
     } catch (err) {
       console.error("Failed to start chat:", err);
     }
-  };
+  }, [navigate]);
 
   const filteredFriends = friends.filter((f) => {
     const friend = f.senderId === user?.id ? f.receiver : f.sender;
@@ -109,10 +110,11 @@ export default function Home() {
             return (
               <ChatRow
                 key={friendship.id || friend.id}
+                id={friend.id}
                 name={friend.name}
                 email={friend.email}
                 avatarUrl={friend.avatar}
-                onClick={() => handleStartChat(friend.id)}
+                onClick={handleStartChat}
               />
             );
           })}
