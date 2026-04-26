@@ -64,23 +64,19 @@ export const onDeleteMessage = (io: Server, socket: Socket) => {
     }
   });
 };
-
-export const onMarkMessageAsRead = (io: Server, socket: Socket) => {
-  socket.on("markMessageAsRead", async (data) => {
+export const onTyping = (io: Server, socket: Socket) => {
+  socket.on("typing", async (data) => {
     try {
-      const parsed = markReadSchema.parse(data);
-
-      await prisma.message.update({
-        where: { id: parsed.messageId },
-        data: { isRead: true }
-      });
-
-      io.to(parsed.chatId).emit("messageRead", {
-        id: parsed.messageId
-      });
-
-    } catch (error) {
-      socket.emit("messageError", { error: "Invalid read request" });
+      // emit to the chat room but NOT back to the sender
+      socket.to(data.chatId).emit("typing", { userId: data.userId });
+    } catch (err) {
+      socket.emit("messageError", { error: "Invalid typing indicator" });
     }
+  });
+
+  socket.on("stopTyping", async (data) => {
+    try {
+      socket.to(data.chatId).emit("stopTyping", { userId: data.userId });
+    } catch (err) {}
   });
 };

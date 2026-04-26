@@ -8,14 +8,14 @@ export const onConnect = (io:Server) =>{
   
   socket.on("join", (userId: string) => {
       socket.join(userId);
-    });
+  });
 
   friendSocket.onFriendRequestSent(io, socket);
   friendSocket.onFriendRequestRespond(io, socket);
   chatSocket.onChatJoin(io, socket);
   chatSocket.onSendMessage(io, socket);
   chatSocket.onDeleteMessage(io,socket);
-  chatSocket.onMarkMessageAsRead(io,socket);
+  chatSocket.onTyping(io,socket);
 })
 }
 

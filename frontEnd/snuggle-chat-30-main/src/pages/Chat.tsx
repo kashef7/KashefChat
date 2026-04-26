@@ -32,8 +32,10 @@ export default function Chat() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [friendIsTyping, setFriendIsTyping] = useState(false);
 
   const chatBoxRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, messageId: string) => {
     e.preventDefault();
@@ -112,16 +114,12 @@ export default function Chat() {
     socket.emit("joinChat", { chatId });
 
     // ─── Mobile background/foreground fix ───────────────────────────────────
-    // When the user swipes away and comes back, the browser suspends the tab
-    // and the WebSocket silently dies. We detect the tab becoming visible again
-    // and either reconnect or re-join the room.
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         if (!socket.connected) {
           setIsReconnecting(true);
           socket.connect();
         } else {
-          // Socket is alive but the server may have evicted us from the room
           socket.emit("joinChat", { chatId });
         }
       }
@@ -156,50 +154,85 @@ export default function Chat() {
       setMessages((prev) => prev.filter((m) => m.id !== data.id));
     };
 
-    // Re-join the room and clear reconnecting state after every reconnect
     const handleConnect = () => {
       socket.emit("joinChat", { chatId });
       setIsReconnecting(false);
     };
 
     const handleDisconnect = () => {
-      // Only show reconnecting if the tab is still visible (user is watching)
       if (document.visibilityState === "visible") {
         setIsReconnecting(true);
       }
     };
 
+    // ─── Typing indicator ────────────────────────────────────────────────────
+    const handleTyping = ({ userId }: { userId: string }) => {
+      if (userId !== user.id) {
+        setFriendIsTyping(true);
+        // Auto-clear after 3s in case stopTyping event is missed
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => setFriendIsTyping(false), 3000);
+      }
+    };
+
+    const handleStopTyping = ({ userId }: { userId: string }) => {
+      if (userId !== user.id) {
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        setFriendIsTyping(false);
+      }
+    };
+    // ────────────────────────────────────────────────────────────────────────
+
     socket.on("receiveMessage", handleReceive);
     socket.on("messageDeleted", handleDeleted);
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
+    socket.on("typing", handleTyping);
+    socket.on("stopTyping", handleStopTyping);
 
     return () => {
       socket.off("receiveMessage", handleReceive);
       socket.off("messageDeleted", handleDeleted);
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
+      socket.off("typing", handleTyping);
+      socket.off("stopTyping", handleStopTyping);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [socket, chatId, user, decodeMsg]);
+
+  // ─── Input change with typing emit ──────────────────────────────────────
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    socket?.emit("typing", { chatId, userId: user?.id });
+
+    // Emit stopTyping after 2s of no keystrokes
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket?.emit("stopTyping", { chatId, userId: user?.id });
+    }, 2000);
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !user || !chatId) return;
 
-    // ─── Guard: don't try to emit on a dead socket ───────────────────────────
+    // Guard: don't try to emit on a dead socket
     if (!socket?.connected) {
       setIsReconnecting(true);
       socket?.connect();
-      // Re-join and retry the send once connected
       socket?.once("connect", () => {
         socket.emit("joinChat", { chatId });
-        // The user will need to press send again — avoids double-send complexity
         setIsReconnecting(false);
       });
       return;
     }
-    // ────────────────────────────────────────────────────────────────────────
+
+    // Stop typing indicator immediately on send
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    socket?.emit("stopTyping", { chatId, userId: user?.id });
 
     const members: { userId: string; publicKeyPem: string }[] = [];
     if (user.publicKey) members.push({ userId: user.id, publicKeyPem: user.publicKey });
@@ -287,7 +320,13 @@ export default function Chat() {
         <div className="flex-1">
           <p className="font-semibold text-foreground">{friendName}</p>
           <p className="text-xs text-muted-foreground">
-            {isReconnecting ? "Reconnecting..." : "online"}
+            {friendIsTyping ? (
+              <span className="animate-pulse text-primary">typing...</span>
+            ) : isReconnecting ? (
+              "Reconnecting..."
+            ) : (
+              "online"
+            )}
           </p>
         </div>
       </header>
@@ -332,6 +371,20 @@ export default function Chat() {
                 onContextMenu={msg.isSent ? handleContextMenu : undefined}
               />
             ))}
+
+            {/* Typing indicator bubble */}
+            {friendIsTyping && (
+              <div className="flex items-end gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-xs font-bold text-foreground">
+                  {friendName.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-accent px-4 py-3">
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
+                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -360,7 +413,7 @@ export default function Chat() {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder={isReconnecting ? "Reconnecting..." : "Type your message..."}
             disabled={isReconnecting}
