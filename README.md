@@ -17,6 +17,12 @@ KashefChat is a modern, full-stack chat application built for privacy and perfor
 ## 🏗️ Architecture Overview
 KashefChat follows a decoupled client-server architecture. The backend is an Express/Node.js server written in TypeScript, using Prisma ORM to interact with a PostgreSQL database. Real-time events are handled via a dedicated Socket.io layer. The frontend is a React application built with Vite, relying on TanStack Query for efficient server state management and caching, while communicating with the backend over REST for standard CRUD operations and WebSockets for real-time chat data.
 
+### Message Sending Flow
+![Message Sending Sequence Diagram](imgs/SeqDig-SendMessage.png)
+
+### End-to-End Encryption Architecture
+![Encryption and Decryption Flow](imgs/ENC-DEC-FlowChart.png)
+
 ## 💻 Tech Stack
 
 | Technology | Purpose |
